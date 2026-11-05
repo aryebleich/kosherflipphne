@@ -1,0 +1,57 @@
+plugins {
+    id "com.android.application" version "8.11.1" apply false
+}
+
+// Shared Android settings for the three KosherFlip apps.
+ext.configureKosherApp = { project, String appId ->
+    project.android {
+        namespace appId
+        compileSdk 36
+
+        defaultConfig {
+            applicationId appId
+            minSdk 28          // Android 9+: runs on existing Android flip phones too
+            targetSdk 36       // Android 16
+            versionCode 1
+            versionName "1.0.0"
+        }
+
+        signingConfigs {
+            release {
+                // CI / release builds: provide a keystore through environment variables.
+                def ks = System.getenv("KOSHERFLIP_KEYSTORE")
+                if (ks) {
+                    storeFile project.file(ks)
+                    storePassword System.getenv("KOSHERFLIP_KEYSTORE_PASSWORD")
+                    keyAlias System.getenv("KOSHERFLIP_KEY_ALIAS")
+                    keyPassword System.getenv("KOSHERFLIP_KEY_PASSWORD")
+                }
+            }
+        }
+
+        buildTypes {
+            release {
+                minifyEnabled false
+                signingConfig System.getenv("KOSHERFLIP_KEYSTORE") ? signingConfigs.release : signingConfigs.debug
+            }
+        }
+
+        compileOptions {
+            sourceCompatibility JavaVersion.VERSION_17
+            targetCompatibility JavaVersion.VERSION_17
+        }
+
+        lint {
+            abortOnError false
+            checkReleaseBuilds false
+        }
+
+        packaging {
+            resources {
+                excludes += ["META-INF/DEPENDENCIES", "META-INF/LICENSE*", "META-INF/NOTICE*",
+                             "META-INF/INDEX.LIST", "META-INF/versions/9/OSGI-INF/MANIFEST.MF",
+                             "META-INF/*.md"]
+            }
+        }
+    }
+}

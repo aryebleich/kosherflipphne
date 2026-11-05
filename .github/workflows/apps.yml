@@ -1,0 +1,71 @@
+name: Build apps
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apps:
+    runs-on: ubuntu-latest
+    env:
+      HAS_KEY: ${{ secrets.KOSHERFLIP_KEYSTORE_B64 != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install Android 16 SDK
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Validate filter policy
+        run: |
+          python3 -m json.tool apps/KosherGuard/src/main/assets/default_policy.json > /dev/null
+          cmp apps/KosherGuard/src/main/assets/default_policy.json rom/vendor/kosher/prebuilt/policy.json
+
+      - name: Decode signing key
+        if: env.HAS_KEY == 'true'
+        env:
+          KEYSTORE_B64: ${{ secrets.KOSHERFLIP_KEYSTORE_B64 }}
+        run: echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks" && echo "KOSHERFLIP_KEYSTORE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+
+      - name: Test and build
+        working-directory: apps
+        env:
+          KOSHERFLIP_KEYSTORE_PASSWORD: ${{ secrets.KOSHERFLIP_KEYSTORE_PASSWORD }}
+          KOSHERFLIP_KEY_ALIAS: ${{ secrets.KOSHERFLIP_KEY_ALIAS }}
+          KOSHERFLIP_KEY_PASSWORD: ${{ secrets.KOSHERFLIP_KEY_PASSWORD }}
+        run: ./gradlew --no-daemon testReleaseUnitTest assembleRelease
+
+      - name: Collect APKs
+        run: |
+          mkdir -p out/apks
+          for a in KosherGuard FlipLauncher KosherAI; do
+            cp apps/$a/build/outputs/apk/release/$a-release.apk out/apks/$a.apk
+          done
+          cp scripts/install-on-phone.sh out/apks/
+          (cd out/apks && sha256sum *.apk > SHA256SUMS)
+          ls -la out/apks
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kosherflip-apks
+          path: out/apks
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: out/apks/*

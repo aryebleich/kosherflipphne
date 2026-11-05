@@ -1,0 +1,36 @@
+name: Build ROM (Android 16 GSI)
+
+# A full Android build needs ~400 GB of disk and 32-64 GB of RAM, which
+# GitHub's hosted runners do not have. Register a self-hosted runner with the
+# label "aosp" on a big Linux machine, then start this workflow by hand.
+on:
+  workflow_dispatch:
+    inputs:
+      variant:
+        description: "user or userdebug"
+        default: user
+      with_gms:
+        description: "Include Google apps (MindTheGapps)"
+        type: boolean
+        default: false
+
+jobs:
+  rom:
+    runs-on: [self-hosted, linux, aosp]
+    timeout-minutes: 720
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        env:
+          AOSP_DIR: ${{ runner.workspace }}/../aosp
+          VARIANT: ${{ inputs.variant }}
+          WITH_GMS: ${{ inputs.with_gms }}
+        run: rom/build-rom.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kosherflip-gsi
+          path: |
+            out/*.img.xz
+            out/*vbmeta.img
+            out/*.sha256
+            out/flash-gsi.sh

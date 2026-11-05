@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "filterMode": "blocklist",
+  "upstreamDns": ["185.228.168.168", "185.228.169.168"],
+  "lockUsbDebugging": false,
+  "allowAppInstalls": false,
+  "allowedApps": [
+    "com.kosherflip.guard",
+    "com.kosherflip.launcher",
+    "com.kosherflip.ai",
+
+    "com.android.dialer", "com.google.android.dialer",
+    "com.android.contacts", "com.google.android.contacts",
+    "com.android.messaging", "com.android.mms", "com.google.android.apps.messaging",
+    "com.android.camera2", "org.lineageos.aperture", "com.google.android.GoogleCamera",
+    "com.android.deskclock", "com.google.android.deskclock",
+    "com.android.calculator2", "com.google.android.calculator",
+    "com.android.calendar", "org.lineageos.etar", "com.google.android.calendar",
+    "com.android.settings",
+    "com.android.stk",
+    "com.android.soundrecorder", "org.lineageos.recorder",
+    "com.android.fmradio", "com.caf.fmradio",
+    "com.android.gallery3d", "org.lineageos.glimpse",
+
+    "com.google.android.apps.maps",
+    "com.waze",
+    "com.google.android.gm"
+  ],
+  "allowedDomains": [
+    "api.anthropic.com",
+    "connectivitycheck.gstatic.com", "connectivitycheck.android.com",
+    "time.android.com", "pool.ntp.org",
+    "gstatic.com", "googleapis.com",
+    "android.clients.google.com", "accounts.google.com", "clients4.google.com",
+    "mtalk.google.com", "mail.google.com", "maps.google.com", "messages.google.com",
+    "waze.com",
+    "lineageos.org"
+  ],
+  "blockedDomains": [
+    "=google.com", "=www.google.com", "news.google.com", "gemini.google.com", "bard.google.com",
+    "bing.com", "duckduckgo.com", "yahoo.com", "yandex.com", "baidu.com",
+    "youtube.com", "youtu.be", "googlevideo.com", "ytimg.com", "youtube.googleapis.com",
+    "tiktok.com", "tiktokcdn.com", "tiktokv.com", "musical.ly",
+    "instagram.com", "cdninstagram.com", "facebook.com", "fbcdn.net", "facebook.net",
+    "twitter.com", "x.com", "twimg.com", "snapchat.com", "reddit.com", "redd.it",
+    "pinterest.com", "tumblr.com", "twitch.tv", "discord.com", "discord.gg",
+    "netflix.com", "nflxvideo.net", "hulu.com", "disneyplus.com", "primevideo.com",
+    "spotify.com", "vimeo.com", "dailymotion.com",
+    "chatgpt.com", "openai.com", "character.ai", "perplexity.ai", "poe.com",
+    "telegram.org", "t.me"
+  ]
+}

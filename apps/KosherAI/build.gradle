@@ -1,0 +1,10 @@
+plugins {
+    id "com.android.application"
+}
+
+rootProject.ext.configureKosherApp(project, "com.kosherflip.ai")
+
+dependencies {
+    // Official Anthropic Java SDK (Claude API)
+    implementation "com.anthropic:anthropic-java:3.6.0"
+}

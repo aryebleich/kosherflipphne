@@ -1,0 +1,65 @@
+//
+// KosherFlip apps. The APKs are produced by ../../../../apps (Gradle) and
+// copied into prebuilt/apps/ by rom/build-rom.sh before the ROM is built.
+//
+
+android_app_import {
+    name: "KosherGuard",
+    apk: "apps/KosherGuard.apk",
+    // Platform signature + privileged: lets KosherGuard make itself device
+    // owner at first boot and mark setup as complete.
+    certificate: "platform",
+    privileged: true,
+    product_specific: true,
+    dex_preopt: {
+        enabled: false,
+    },
+    overrides: [
+        "Provision",
+        "Browser2",
+        "QuickSearchBox",
+    ],
+    required: [
+        "privapp-permissions-kosherflip.xml",
+        "kosherflip-policy.json",
+    ],
+}
+
+android_app_import {
+    name: "FlipLauncher",
+    apk: "apps/FlipLauncher.apk",
+    presigned: true,
+    product_specific: true,
+    dex_preopt: {
+        enabled: false,
+    },
+    overrides: [
+        "Launcher3",
+        "Launcher3QuickStep",
+    ],
+}
+
+android_app_import {
+    name: "KosherAI",
+    apk: "apps/KosherAI.apk",
+    presigned: true,
+    product_specific: true,
+    dex_preopt: {
+        enabled: false,
+    },
+}
+
+prebuilt_etc {
+    name: "privapp-permissions-kosherflip.xml",
+    src: "privapp-permissions-kosherflip.xml",
+    sub_dir: "permissions",
+    product_specific: true,
+}
+
+prebuilt_etc {
+    name: "kosherflip-policy.json",
+    src: "policy.json",
+    filename: "policy.json",
+    sub_dir: "kosherflip",
+    product_specific: true,
+}

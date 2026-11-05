@@ -7,26 +7,26 @@ import java.util.Map;
 final class DnsCache {
     private static final long MIN_TTL_MS = 30_000, MAX_TTL_MS = 600_000;
     private final int capacity;
-    private final LinkedHashMap<String, Entry> map;
+    private final LinkedHashMap<String, CacheEntry> map;
 
-    private static final class Entry {
+    private static final class CacheEntry {
         final byte[] answer;
         final long expires;
-        Entry(byte[] a, long e) { answer = a; expires = e; }
+        CacheEntry(byte[] a, long e) { answer = a; expires = e; }
     }
 
     DnsCache(int capacity) {
         this.capacity = capacity;
-        this.map = new LinkedHashMap<String, Entry>(256, 0.75f, true) {
+        this.map = new LinkedHashMap<String, CacheEntry>(256, 0.75f, true) {
             @Override
-            protected boolean removeEldestEntry(Map.Entry<String, Entry> eldest) {
+            protected boolean removeEldestEntry(Map.Entry<String, CacheEntry> eldest) {
                 return size() > DnsCache.this.capacity;
             }
         };
     }
 
     synchronized byte[] get(String key) {
-        Entry e = map.get(key);
+        CacheEntry e = map.get(key);
         if (e == null) return null;
         if (System.currentTimeMillis() > e.expires) {
             map.remove(key);
@@ -40,7 +40,7 @@ final class DnsCache {
         int rcode = answer[3] & 0x0F;
         if (rcode != 0 && rcode != 3) return; // don't cache server failures
         long ttl = Math.max(MIN_TTL_MS, Math.min(MAX_TTL_MS, minTtlSeconds(answer) * 1000L));
-        map.put(key, new Entry(answer.clone(), System.currentTimeMillis() + ttl));
+        map.put(key, new CacheEntry(answer.clone(), System.currentTimeMillis() + ttl));
     }
 
     synchronized void clear() {

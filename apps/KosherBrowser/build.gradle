@@ -1,0 +1,10 @@
+plugins {
+    id "com.android.application"
+}
+
+rootProject.ext.configureKosherApp(project, "com.kosherflip.browser")
+
+dependencies {
+    implementation project(":common")
+    testImplementation "junit:junit:4.13.2"
+}

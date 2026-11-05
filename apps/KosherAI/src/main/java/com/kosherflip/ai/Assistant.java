@@ -1,25 +1,20 @@
 package com.kosherflip.ai;
 
-import com.anthropic.client.AnthropicClient;
-import com.anthropic.client.okhttp.AnthropicOkHttpClient;
-import com.anthropic.core.JsonValue;
-import com.anthropic.errors.AnthropicIoException;
-import com.anthropic.errors.AnthropicServiceException;
-import com.anthropic.errors.BadRequestException;
-import com.anthropic.errors.PermissionDeniedException;
-import com.anthropic.errors.RateLimitException;
-import com.anthropic.errors.UnauthorizedException;
-import com.anthropic.models.messages.Message;
-import com.anthropic.models.messages.MessageCreateParams;
-import com.anthropic.models.messages.OutputConfig;
-import com.anthropic.models.messages.StopReason;
+
+import com.kosherflip.common.WordFilter;
 
 import java.util.ArrayList;
 import java.util.List;
 
-/** Talks to Claude with a modest, kosher-phone system prompt. Not thread safe; call from one worker thread. */
+/**
+ * The assistant: a fixed modest, kosher-phone system prompt, a short history,
+ * and a word filter on every question and answer. The model behind it is a
+ * {@link Provider}: Google Gemini (free API key, default), any OpenAI-compatible
+ * service (e.g. free models on Groq or OpenRouter), or Claude.
+ * Not thread safe; call from one worker thread.
+ */
 final class Assistant {
-    static final String MODEL = "claude-opus-5-5";
+    static final String CLAUDE_MODEL = "claude-opus-5-5";
 
     static final String SYSTEM_PROMPT =
             "You are \"Ask AI\", the built-in assistant on a kosher flip phone. The people using this phone "
@@ -44,13 +39,15 @@ final class Assistant {
             + "(English, Hebrew or Yiddish are common).";
 
     private static final int MAX_TURNS = 20;
+    static final String FILTERED = "Sorry, I can't help with that. Let's talk about something else.";
 
-    private final AnthropicClient client;
-    private boolean useFallbacks = true;
+    private final Provider provider;
+    private final WordFilter filter;
     private final List<String[]> history = new ArrayList<>(); // {role, text}
 
-    Assistant(String apiKey) {
-        client = AnthropicOkHttpClient.builder().apiKey(apiKey).build();
+    Assistant(Provider provider, WordFilter filter) {
+        this.provider = provider;
+        this.filter = filter;
     }
 
     void reset() {
@@ -59,59 +56,36 @@ final class Assistant {
 
     /** Sends a question and returns the answer text (or a friendly error message). */
     String ask(String question) {
+        if (filter.check(question).blocked) return FILTERED;
         history.add(new String[] {"user", question});
         while (history.size() > MAX_TURNS * 2) {
             // Drop the oldest exchange so requests stay small on slow networks.
             history.remove(0);
             history.remove(0);
         }
-        MessageCreateParams.Builder b = MessageCreateParams.builder()
-                .model(MODEL)
-                .maxTokens(16000L)
-                .system(SYSTEM_PROMPT)
-                .outputConfig(OutputConfig.builder().effort(OutputConfig.Effort.LOW).build());
-        if (useFallbacks) {
-            // Server-side refusal fallback: if a safety classifier declines, the API
-            // retries on a suitable model instead of returning nothing.
-            b.putAdditionalHeader("anthropic-beta", "server-side-fallback-2026-07-01")
-                    .putAdditionalBodyProperty("fallbacks", JsonValue.from("default"));
-        }
-        for (String[] m : history) {
-            if ("user".equals(m[0])) b.addUserMessage(m[1]);
-            else b.addAssistantMessage(m[1]);
-        }
         String answer;
         try {
-            Message resp = client.messages().create(b.build());
-            if (resp.stopReason().isPresent() && StopReason.REFUSAL.equals(resp.stopReason().get())) {
-                answer = "Sorry, I can't help with that. Let's talk about something else.";
-            } else {
-                StringBuilder sb = new StringBuilder();
-                resp.content().forEach(block -> block.text().ifPresent(t -> sb.append(t.text())));
-                answer = sb.toString().trim();
-                if (answer.isEmpty()) answer = "(no answer)";
-            }
-        } catch (BadRequestException e) {
+            answer = provider.ask(SYSTEM_PROMPT, history);
+        } catch (Provider.FriendlyException e) {
             history.remove(history.size() - 1);
-            if (useFallbacks && String.valueOf(e.getMessage()).contains("fallback")) {
-                useFallbacks = false; // account/region without the beta: retry plainly
-                return ask(question);
-            }
-            return "The assistant could not answer that (" + e.statusCode() + ").";
-        } catch (UnauthorizedException | PermissionDeniedException e) {
+            return e.getMessage();
+        } catch (Exception e) {
             history.remove(history.size() - 1);
-            return "The AI key is not valid. Please ask the phone's admin to check it in KosherGuard.";
-        } catch (RateLimitException e) {
-            history.remove(history.size() - 1);
-            return "The assistant is busy right now. Please try again in a minute.";
-        } catch (AnthropicServiceException e) {
-            history.remove(history.size() - 1);
-            return "The assistant had a problem (" + e.statusCode() + "). Please try again.";
-        } catch (AnthropicIoException e) {
-            history.remove(history.size() - 1);
-            return "No internet connection. Please check your signal and try again.";
+            return "The assistant had a problem. Please check your signal and try again.";
         }
-        history.add(new String[] {"assistant", answer});
-        return answer;
+        if (answer == null || answer.trim().isEmpty()) answer = FILTERED;
+        if (filter.check(answer).blocked) answer = FILTERED;
+        history.add(new String[] {"assistant", answer.trim()});
+        return answer.trim();
+    }
+
+    /** Builds the provider chosen by the admin. */
+    static Provider create(String provider, String apiKey, String model, String baseUrl) {
+        switch (provider == null ? "" : provider) {
+            case "claude": return new ClaudeProvider(apiKey, model.isEmpty() ? CLAUDE_MODEL : model);
+            case "openai": return new OpenAiProvider(apiKey, model, baseUrl);
+            case "gemini":
+            default: return new GeminiProvider(apiKey, model);
+        }
     }
 }

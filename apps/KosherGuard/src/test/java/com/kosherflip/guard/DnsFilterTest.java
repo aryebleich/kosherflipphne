@@ -125,4 +125,77 @@ public class DnsFilterTest {
         assertEquals(0, DnsPacket.u16(r, d + 6));
         assertEquals(r.length - 28, DnsPacket.u16(r, 24) - 8);
     }
+
+    // ---- categories, profiles, helpers ----
+
+    private static java.util.Map<String, java.util.Set<String>> cats() {
+        java.util.Map<String, java.util.Set<String>> m = new java.util.HashMap<>();
+        m.put("social", new java.util.HashSet<>(java.util.Arrays.asList("facebook.com", "instagram.com")));
+        m.put("video", new java.util.HashSet<>(java.util.Arrays.asList("youtube.com", "vimeo.com")));
+        m.put("shopping", new java.util.HashSet<>(java.util.Arrays.asList("amazon.com", "walmart.com")));
+        return m;
+    }
+
+    @Test
+    public void categoriesBlockAndTrust() {
+        Policy p = new Policy();
+        Profiles.apply(p, Profiles.HEIMISH);
+        DnsFilter f = new DnsFilter(p, cats());
+        assertFalse(f.isAllowed("m.facebook.com"));
+        assertFalse(f.isAllowed("vimeo.com"));        // video blocked
+        assertTrue(f.isAllowed("www.amazon.com"));     // trusted
+        assertTrue(f.isAllowed("example.org"));        // standard mode
+    }
+
+    @Test
+    public void kosherProfileAllowsOnlyTrusted() {
+        Policy p = new Policy();
+        Profiles.apply(p, Profiles.KOSHER);
+        DnsFilter f = new DnsFilter(p, cats());
+        assertTrue(f.isAllowed("amazon.com"));
+        assertFalse(f.isAllowed("example.org"));
+    }
+
+    @Test
+    public void openProfileAllowsVideoWhenNotBlocked() {
+        Policy p = new Policy();
+        Profiles.apply(p, Profiles.OPEN);
+        DnsFilter f = new DnsFilter(p, cats());
+        assertTrue(f.isAllowed("youtube.com"));
+        assertTrue(f.isAllowed("facebook.com"));
+    }
+
+    @Test
+    public void adminBlockBeatsTrustedCategory() {
+        Policy p = new Policy();
+        Profiles.apply(p, Profiles.HEIMISH);
+        p.blockedDomains.add("walmart.com");
+        assertFalse(new DnsFilter(p, cats()).isAllowed("walmart.com"));
+    }
+
+    @Test
+    public void verificationCodes() {
+        assertEquals("482913", SmsReceiver.verificationCode("Your Google verification code is 482913"));
+        assertEquals("1234", SmsReceiver.verificationCode("Chase: one-time code 1234. Don't share it."));
+        assertNull(SmsReceiver.verificationCode("Call me at 3pm, room 1204"));
+    }
+
+    @Test
+    public void siteGrouping() {
+        assertEquals("amazon.com", Stats.site("images-na.ssl.amazon.com."));
+        assertEquals("bbc.co.uk", Stats.site("news.bbc.co.uk"));
+        assertEquals("x.com", Stats.site("x.com"));
+    }
+
+    @Test
+    public void cacheTtlFromAnswer() {
+        // header: id, flags, qd=1, an=1; question a.com A IN; answer ptr->12, A IN ttl=300 rdlen 4
+        byte[] m = {0, 1, (byte) 0x81, (byte) 0x80, 0, 1, 0, 1, 0, 0, 0, 0,
+                1, 'a', 3, 'c', 'o', 'm', 0, 0, 1, 0, 1,
+                (byte) 0xC0, 12, 0, 1, 0, 1, 0, 0, 1, 44, 0, 4, 1, 2, 3, 4};
+        assertEquals(300, DnsCache.minTtlSeconds(m));
+        DnsCache c = new DnsCache(10);
+        c.put("a.com/1/1", m);
+        assertNotNull(c.get("a.com/1/1"));
+    }
 }

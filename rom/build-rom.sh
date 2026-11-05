@@ -32,11 +32,11 @@ PREBUILT="$REPO_ROOT/rom/vendor/kosher/prebuilt/apps"
 mkdir -p "$PREBUILT"
 if [[ -n "${APKS_DIR:-}" ]]; then
   log "Using APKs from $APKS_DIR"
-  for a in KosherGuard FlipLauncher KosherAI; do cp "$APKS_DIR/$a.apk" "$PREBUILT/$a.apk"; done
+  for a in KosherGuard FlipLauncher KosherBrowser KosherAI; do cp "$APKS_DIR/$a.apk" "$PREBUILT/$a.apk"; done
 else
   log "Building KosherFlip apps (Gradle)"
   (cd "$REPO_ROOT/apps" && ./gradlew --no-daemon assembleRelease)
-  for a in KosherGuard FlipLauncher KosherAI; do
+  for a in KosherGuard FlipLauncher KosherBrowser KosherAI; do
     cp "$REPO_ROOT/apps/$a/build/outputs/apk/release/$a-release.apk" "$PREBUILT/$a.apk"
   done
 fi

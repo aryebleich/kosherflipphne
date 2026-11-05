@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Turn an EXISTING Android flip phone (Android 9+) into a filtered KosherFlip
-# phone without flashing a ROM: installs the apps and makes KosherGuard the
+# phone without flashing a ROM: installs the four apps and makes KosherGuard the
 # device owner, which lets it enforce the filter.
 #
 #   scripts/install-on-phone.sh [folder-with-apks]
@@ -19,7 +19,7 @@ command -v adb >/dev/null || { echo "adb not found - install Android platform-to
 adb wait-for-device
 echo "Phone: $(adb shell getprop ro.product.manufacturer | tr -d '\r') $(adb shell getprop ro.product.model | tr -d '\r'), Android $(adb shell getprop ro.build.version.release | tr -d '\r')"
 
-for a in KosherGuard FlipLauncher KosherAI; do
+for a in KosherGuard FlipLauncher KosherBrowser KosherAI; do
   f="$DIR/$a.apk"
   [[ -f "$f" ]] || f="$(ls "$DIR"/$a*.apk 2>/dev/null | head -1 || true)"
   [[ -f "$f" ]] || { echo "Missing $a APK in $DIR (download them from the GitHub release)"; exit 1; }
@@ -28,6 +28,10 @@ for a in KosherGuard FlipLauncher KosherAI; do
 done
 
 adb shell pm disable com.kosherflip.guard/.SetupActivity >/dev/null 2>&1 || true
+
+# Screen filter: let KosherGuard switch its accessibility service on (and back on, if disabled).
+adb shell pm grant com.kosherflip.guard android.permission.WRITE_SECURE_SETTINGS || \
+  echo "Note: could not grant WRITE_SECURE_SETTINGS; turn on Settings > Accessibility > KosherGuard screen filter by hand."
 
 echo "Making KosherGuard the device owner ..."
 if ! adb shell dpm set-device-owner com.kosherflip.guard/.GuardAdminReceiver; then
@@ -46,7 +50,8 @@ cat <<'MSG'
 
 Done. On the phone:
   1. Choose an admin PIN in KosherGuard.
-  2. Optional: KosherGuard > AI assistant > enter a Claude API key.
-  3. Optional: add a Google account (Gmail / Maps / Play services) now.
-  4. Optional: KosherGuard > USB debugging lock, so the filter can't be removed by computer.
+  2. Choose a profile (Kosher / Heimish / Open + protected) in KosherGuard.
+  3. Optional: KosherGuard > AI assistant > paste a FREE Gemini key (aistudio.google.com).
+  4. Optional: add a Google account (Gmail / Maps / Play services) now.
+  5. Optional: KosherGuard > USB debugging lock, so the filter can't be removed by computer.
 MSG

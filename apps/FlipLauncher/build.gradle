@@ -3,3 +3,7 @@ plugins {
 }
 
 rootProject.ext.configureKosherApp(project, "com.kosherflip.launcher")
+
+dependencies {
+    implementation project(":common")
+}

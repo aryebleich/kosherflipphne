@@ -76,6 +76,15 @@ final class DnsPacket {
         return null;
     }
 
+    /** "name/type/class" of the first question, used as cache key; null if malformed. */
+    String cacheKey() {
+        int qEnd = questionEnd();
+        String name = queryName();
+        if (qEnd < 0 || name == null) return null;
+        int t = dnsOffset + qEnd - 4;
+        return name.toLowerCase(java.util.Locale.ROOT) + "/" + u16(raw, t) + "/" + u16(raw, t + 2);
+    }
+
     /** Offset (relative to DNS payload) just after the first question, or -1. */
     private int questionEnd() {
         int p = dnsOffset + 12;

@@ -36,7 +36,33 @@ public final class Policy {
     public Set<String> allowedApps = new LinkedHashSet<>();
     public Set<String> allowedDomains = new LinkedHashSet<>();
     public Set<String> blockedDomains = new LinkedHashSet<>();
-    /** Claude API key handed to the KosherAI app through managed configuration. */
+    public String profile = Profiles.HEIMISH;
+    public Set<String> blockedCategories = new LinkedHashSet<>();
+    public Set<String> trustedCategories = new LinkedHashSet<>();
+    /** none | trusted | blur | all - how the browser shows pictures. */
+    public String imageMode = "trusted";
+    public boolean blockVideo = true;
+    public boolean browserEnabled = true;
+    /** Scan the text of every screen in every app. */
+    public boolean screenFilter = true;
+    public Set<String> customWords = new LinkedHashSet<>();
+    /** Talk-only: messaging apps hidden, texts auto-answered, verification codes still shown. */
+    public boolean talkOnly;
+    public boolean cameraEnabled = true;
+    public boolean blockTethering = true;
+    public boolean blockUsbTransfer = true;
+    /** off | auto | on */
+    public String shabbosMode = "off";
+    public double latitude, longitude;
+    public boolean inIsrael;
+    public int candleMinutes = 18;
+    public int endMinutes = 50;
+    public Set<String> allowedDownloadTypes = new LinkedHashSet<>();
+
+    /** AI assistant: provider gemini (free key) | openai (any OpenAI-compatible, e.g. free Groq/OpenRouter models) | claude. */
+    public String aiProvider = "gemini";
+    public String aiModel = "";
+    public String aiBaseUrl = "";
     public String aiApiKey = "";
     public boolean aiEnabled = true;
 
@@ -103,6 +129,28 @@ public final class Policy {
         p.allowAppInstalls = o.optBoolean("allowAppInstalls", false);
         p.aiApiKey = o.optString("aiApiKey", "");
         p.aiEnabled = o.optBoolean("aiEnabled", true);
+        p.aiProvider = o.optString("aiProvider", "gemini");
+        p.aiModel = o.optString("aiModel", "");
+        p.aiBaseUrl = o.optString("aiBaseUrl", "");
+        p.profile = o.optString("profile", Profiles.HEIMISH);
+        p.imageMode = o.optString("imageMode", "trusted");
+        p.blockVideo = o.optBoolean("blockVideo", true);
+        p.browserEnabled = o.optBoolean("browserEnabled", true);
+        p.screenFilter = o.optBoolean("screenFilter", true);
+        p.talkOnly = o.optBoolean("talkOnly", false);
+        p.cameraEnabled = o.optBoolean("cameraEnabled", true);
+        p.blockTethering = o.optBoolean("blockTethering", true);
+        p.blockUsbTransfer = o.optBoolean("blockUsbTransfer", true);
+        p.shabbosMode = o.optString("shabbosMode", "off");
+        p.latitude = o.optDouble("latitude", 0);
+        p.longitude = o.optDouble("longitude", 0);
+        p.inIsrael = o.optBoolean("inIsrael", false);
+        p.candleMinutes = o.optInt("candleMinutes", 18);
+        p.endMinutes = o.optInt("endMinutes", 50);
+        readList(o.optJSONArray("blockedCategories"), p.blockedCategories);
+        readList(o.optJSONArray("trustedCategories"), p.trustedCategories);
+        readList(o.optJSONArray("customWords"), p.customWords);
+        readList(o.optJSONArray("allowedDownloadTypes"), p.allowedDownloadTypes);
         readList(o.optJSONArray("upstreamDns"), p.upstreamDns);
         readList(o.optJSONArray("allowedApps"), p.allowedApps);
         readList(o.optJSONArray("allowedDomains"), p.allowedDomains);
@@ -113,6 +161,10 @@ public final class Policy {
             p.upstreamDns.add("185.228.169.168");
         }
         p.allowedApps.add(BuildConfigShim.GUARD);
+        if (!o.has("blockedCategories")) {
+            // Settings saved by KosherGuard 1.0: fill in the new options from the profile.
+            Profiles.applyCategoryDefaults(p, p.profile);
+        }
         return p;
     }
 
@@ -125,6 +177,28 @@ public final class Policy {
             o.put("allowAppInstalls", allowAppInstalls);
             o.put("aiApiKey", aiApiKey);
             o.put("aiEnabled", aiEnabled);
+            o.put("aiProvider", aiProvider);
+            o.put("aiModel", aiModel);
+            o.put("aiBaseUrl", aiBaseUrl);
+            o.put("profile", profile);
+            o.put("imageMode", imageMode);
+            o.put("blockVideo", blockVideo);
+            o.put("browserEnabled", browserEnabled);
+            o.put("screenFilter", screenFilter);
+            o.put("talkOnly", talkOnly);
+            o.put("cameraEnabled", cameraEnabled);
+            o.put("blockTethering", blockTethering);
+            o.put("blockUsbTransfer", blockUsbTransfer);
+            o.put("shabbosMode", shabbosMode);
+            o.put("latitude", latitude);
+            o.put("longitude", longitude);
+            o.put("inIsrael", inIsrael);
+            o.put("candleMinutes", candleMinutes);
+            o.put("endMinutes", endMinutes);
+            o.put("blockedCategories", new JSONArray(blockedCategories));
+            o.put("trustedCategories", new JSONArray(trustedCategories));
+            o.put("customWords", new JSONArray(customWords));
+            o.put("allowedDownloadTypes", new JSONArray(allowedDownloadTypes));
             o.put("upstreamDns", new JSONArray(upstreamDns));
             o.put("allowedApps", new JSONArray(allowedApps));
             o.put("allowedDomains", new JSONArray(allowedDomains));

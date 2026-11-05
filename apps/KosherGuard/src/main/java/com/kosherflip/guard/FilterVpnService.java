@@ -36,6 +36,8 @@ public class FilterVpnService extends VpnService {
     private volatile DnsFilter filter;
     private volatile List<String> upstream;
     private volatile boolean running;
+    /** Answer cache: repeated lookups are answered instantly from the phone. */
+    private final DnsCache cache = new DnsCache(2000);
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -46,8 +48,9 @@ public class FilterVpnService extends VpnService {
 
     private void loadPolicy() {
         Policy p = Policy.load(this);
-        filter = new DnsFilter(p);
+        filter = new DnsFilter(p, Categories.load(this));
         upstream = p.upstreamDns;
+        cache.clear();
     }
 
     private synchronized void start() {
@@ -100,10 +103,21 @@ public class FilterVpnService extends VpnService {
         byte[] reply;
         if (name == null || !filter.isAllowed(name)) {
             Log.i(TAG, "blocked " + name);
+            Stats.record(this, name, true);
             reply = pkt.blockedReply();
         } else {
-            reply = forward(pkt);
-            if (reply == null) return; // let the client retry
+            Stats.record(this, name, false);
+            String key = pkt.cacheKey();
+            byte[] cached = key == null ? null : cache.get(key);
+            if (cached != null) {
+                DnsPacket.put16(cached, 0, DnsPacket.u16(pkt.raw, pkt.dnsOffset)); // this query's ID
+                reply = pkt.reply(cached, cached.length);
+            } else {
+                byte[] answer = forwardDns(pkt);
+                if (answer == null) return; // let the client retry
+                if (key != null) cache.put(key, answer);
+                reply = pkt.reply(answer, answer.length);
+            }
         }
         synchronized (this) {
             try {
@@ -114,7 +128,7 @@ public class FilterVpnService extends VpnService {
         }
     }
 
-    private byte[] forward(DnsPacket pkt) {
+    private byte[] forwardDns(DnsPacket pkt) {
         byte[] query = pkt.dnsPayload();
         for (String server : upstream) {
             try (DatagramSocket s = new DatagramSocket()) {
@@ -125,7 +139,7 @@ public class FilterVpnService extends VpnService {
                 byte[] resp = new byte[4096];
                 DatagramPacket dp = new DatagramPacket(resp, resp.length);
                 s.receive(dp);
-                return pkt.reply(resp, dp.getLength());
+                return java.util.Arrays.copyOf(resp, dp.getLength());
             } catch (IOException e) {
                 Log.w(TAG, "upstream " + server + " failed: " + e.getMessage());
             }
@@ -147,6 +161,7 @@ public class FilterVpnService extends VpnService {
 
     private synchronized void stop() {
         running = false;
+        Stats.flush(this);
         if (pool != null) pool.shutdownNow();
         try {
             if (tun != null) tun.close();

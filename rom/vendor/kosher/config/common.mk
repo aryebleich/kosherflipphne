@@ -2,10 +2,11 @@
 # Everything that makes a KosherFlip build, shared by every product/device.
 #
 
-# The three KosherFlip apps (built by apps/ with Gradle, imported as prebuilts)
+# The KosherFlip apps (built by apps/ with Gradle, imported as prebuilts)
 PRODUCT_PACKAGES += \
     KosherGuard \
     FlipLauncher \
+    KosherBrowser \
     KosherAI \
     privapp-permissions-kosherflip.xml \
     kosherflip-policy.json

@@ -1,23 +1,55 @@
 # KosherFlip
 
 An open-source, filtered **Android 16** system for flip phones, in the spirit of
-kosher phones like the Pom, Fig and Wonder: calls, texts, approved apps
-(e.g. Google Maps, Waze, Gmail), a clean AI assistant, and **no open internet**.
+kosher phones like the Pom, Fig, Wonder and Mind: calls, texts, approved apps
+(Google Maps, Waze, Gmail…), a **filtered browser for shopping, browsing and
+downloads**, a filter that checks **everything on the screen**, and a free AI assistant.
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│  FlipLauncher   keypad home screen · Hebrew date · T9 dial   │
-│  KosherAI       "Ask AI" – modest, filtered Claude assistant │
+│  FlipLauncher   keypad home · Hebrew date · zmanim · T9 dial │
+│  KosherBrowser  filtered web: shop, browse, download         │
+│  KosherAI       "Ask AI" – free Gemini, modest & filtered    │
 │  KosherGuard    the filter (device owner):                   │
-│                 · only approved apps are visible             │
-│                 · DNS filter VPN, always on, can't be off    │
-│                 · no installs, no factory reset, no bypass   │
-│                 · admin PIN for the supervisor               │
+│   · profiles: Kosher / Heimish / Open + protected            │
+│   · website categories + family-safe DNS, cached = fast      │
+│   · screen filter: reads every app's screen, covers bad text │
+│   · approved apps only · request access · insights           │
+│   · talk-only · Shabbos mode · camera/hotspot/USB locks      │
+│   · no installs, no factory reset, no bypass · admin PIN     │
 ├──────────────────────────────────────────────────────────────┤
 │  Android 16 GSI (AOSP)  + optional Google apps               │
 │  ── the phone's own kernel & vendor drivers (Project Treble) │
 └──────────────────────────────────────────────────────────────┘
 ```
+
+## Features
+
+**Filtering ("heimish filter" style, but usable)**
+- **Profiles**: *Kosher* (calls, texts, approved apps, no browser), *Heimish* (filtered browsing,
+  shopping & downloads; pictures only on trusted sites), *Open + protected* (most sites, smart filtering).
+- **Website categories**: social media, video, streaming, news & gossip, games, dating, gambling,
+  unfiltered AI chat, unfiltered search, proxies/VPNs, web chat – each on/off. Trusted categories
+  (shopping & payments, Torah & Jewish sites, banks/travel/government) always work and may show pictures.
+- **Family-safe DNS** (CleanBrowsing Family: adult, proxies, SafeSearch) on top, through an always-on,
+  DNS-only local VPN with an answer cache – normal data never goes through it, so no slowdown.
+- **Screen filter for every app**: reads the text on screen (and notifications) on the phone itself
+  and covers anything inappropriate, then goes back. Admin can add words in any language.
+- **Browser**: every page's text checked; pictures *none / trusted sites / blurred / all*; video blocked
+  (unless allowed); Google SafeSearch forced; image & video search blocked; ads & trackers blocked
+  (faster pages); downloads limited to safe types (PDF, Office, MP3, photos…), apps only when allowed.
+- **Smart & personal**: *Insights* (most used & most blocked sites), *Suggestions* (blocked sites the
+  phone keeps trying), *Requests* (the user asks for a site or an app; the admin approves with one key),
+  browser home page shows **your own most-visited sites**.
+
+**Kosher-phone features** (see the comparison in [docs/FEATURES.md](docs/FEATURES.md))
+- Talk-only mode: messaging hidden, polite auto-reply, **verification codes still shown**.
+- Shabbos & Yom Tov mode (auto from candle lighting to nightfall, by location) – phone & contacts only.
+- Video blocked by default; camera on/off; hotspot block; no sideloading (USB, Bluetooth, SD card).
+- Only approved apps; no app store unless the admin opens installs; factory reset & safe mode blocked.
+- Keypad-first: home with Hebrew date and zmanim, T9 dialing, numbered app list, keypad pointer in the browser.
+- **Free AI** ("Ask AI"): Google Gemini free key, strictest Google safety settings + our modest prompt +
+  our word filter on questions and answers. Other free OpenAI-compatible services or Claude also supported.
 
 ## Two ways to install
 
@@ -31,7 +63,7 @@ kosher phones like the Pom, Fig and Wonder: calls, texts, approved apps
 
 ### A. Apps only
 
-1. Download `KosherGuard.apk`, `FlipLauncher.apk`, `KosherAI.apk` and
+1. Download `KosherGuard.apk`, `FlipLauncher.apk`, `KosherBrowser.apk`, `KosherAI.apk` and
    `install-on-phone.sh` from the **Releases** page (or the latest
    *Build apps* workflow run → artifact `kosherflip-apks`).
 2. Factory reset the phone (Android only accepts a filter "device owner" when no accounts exist).
@@ -59,10 +91,12 @@ See [docs/BUILDING.md](docs/BUILDING.md) and [docs/DEVICES.md](docs/DEVICES.md).
 ## Repository layout
 
 ```
-apps/                     Gradle project with the three apps (Java, no AndroidX – small and fast)
-  KosherGuard/            filter: device-owner policy, DNS-filter VPN, PIN admin console
+apps/                     Gradle project (Java, no AndroidX – small and fast)
+  common/                 shared word filter + zmanim (pure Java, unit tested)
+  KosherGuard/            filter: device owner, DNS VPN, screen filter, profiles, requests, admin console
   FlipLauncher/           keypad home screen + app list
-  KosherAI/               AI assistant (official Anthropic Java SDK)
+  KosherBrowser/          filtered browser with keypad pointer
+  KosherAI/               AI assistant (Gemini free / OpenAI-compatible / Claude)
 rom/
   vendor/kosher/          AOSP vendor tree: product kosher_gsi_arm64, app imports, permissions, policy
   local_manifests/        optional Google apps (MindTheGapps, Android 16 "baklava")
@@ -78,6 +112,7 @@ docs/                     architecture, filter/admin guide, building, devices
 ## Documentation
 
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) – how the pieces fit together
+- [docs/FEATURES.md](docs/FEATURES.md) – feature list and comparison with Pom, Fig, Mind, Wonder
 - [docs/FILTER.md](docs/FILTER.md) – what is blocked, the admin console, customising the policy
 - [docs/BUILDING.md](docs/BUILDING.md) – building the apps and the ROM
 - [docs/DEVICES.md](docs/DEVICES.md) – choosing a flip phone and porting
@@ -91,6 +126,10 @@ docs/                     architecture, filter/admin guide, building, devices
   Go); for those use path A, or a device-specific port (see DEVICES.md).
 - Google apps are proprietary. `WITH_GMS=true` is fine for building your own
   phone; distributing images that include them needs a licence from Google.
-- No filter is perfect. KosherGuard closes the common holes (browsers, app
-  stores, VPN/DNS changes, factory reset, safe mode); keep the admin PIN private
-  and turn on the USB-debugging lock once set up.
+- No filter is perfect. The screen filter reads **text**; pictures are controlled
+  in KosherBrowser (none / trusted / blur) and by only allowing trusted apps –
+  there is no on-device image recognition yet. Keep the admin PIN private and
+  turn on the USB-debugging lock once set up.
+- Zmanim are calculated on the phone (±1–2 minutes); follow your community's luach.
+- Kosher certification (e.g. by a Vaad) is a rabbinic decision about a specific setup – this
+  project gives you the tools, not a hechsher.

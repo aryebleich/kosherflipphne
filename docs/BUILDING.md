@@ -6,7 +6,7 @@ Requirements: JDK 17+ and the Android SDK (platform 36, build-tools 36.0.0).
 
 ```sh
 cd apps
-./gradlew testReleaseUnitTest assembleRelease
+./gradlew :common:test testReleaseUnitTest assembleRelease
 # → */build/outputs/apk/release/*-release.apk
 ```
 

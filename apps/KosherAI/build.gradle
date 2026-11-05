@@ -5,6 +5,12 @@ plugins {
 rootProject.ext.configureKosherApp(project, "com.kosherflip.ai")
 
 dependencies {
-    // Official Anthropic Java SDK (Claude API)
+    implementation project(":common")
+    // Official Anthropic Java SDK (optional paid provider: Claude)
     implementation "com.anthropic:anthropic-java:3.6.0"
+}
+
+dependencies {
+    testImplementation "junit:junit:4.13.2"
+    testImplementation "org.json:json:20260814"
 }

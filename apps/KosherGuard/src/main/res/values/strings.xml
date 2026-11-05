@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="screen_guard_description">KosherGuard screen filter: reads the text shown on the screen in every app and covers anything inappropriate. Nothing leaves the phone.</string>
+</resources>

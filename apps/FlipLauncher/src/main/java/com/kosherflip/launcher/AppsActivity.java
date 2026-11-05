@@ -66,6 +66,10 @@ public class AppsActivity extends Activity {
     }
 
     private void launch(int pos) {
+        if (pos == apps.size()) {
+            requestApp();
+            return;
+        }
         if (pos < 0 || pos >= apps.size()) return;
         ResolveInfo ri = apps.get(pos);
         Intent i = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
@@ -75,6 +79,19 @@ public class AppsActivity extends Activity {
             startActivity(i);
         } catch (ActivityNotFoundException | SecurityException ignored) {
         }
+    }
+
+    /** Ask the admin (KosherGuard) for an app that is not on the phone's approved list. */
+    private void requestApp() {
+        android.widget.EditText e = new android.widget.EditText(this);
+        e.setHint("App name, e.g. Waze");
+        e.setSingleLine(true);
+        new android.app.AlertDialog.Builder(this).setTitle("Request an app")
+                .setView(e)
+                .setPositiveButton("Send", (d, w) -> sendBroadcast(new Intent("com.kosherflip.guard.REQUEST")
+                        .setPackage("com.kosherflip.guard").putExtra("type", "app")
+                        .putExtra("value", e.getText().toString().trim())))
+                .setNegativeButton("Cancel", null).show();
     }
 
     @Override
@@ -91,7 +108,7 @@ public class AppsActivity extends Activity {
     }
 
     private class Adapter extends BaseAdapter {
-        @Override public int getCount() { return apps.size(); }
+        @Override public int getCount() { return apps.size() + 1; } // + "Request an app"
         @Override public Object getItem(int p) { return apps.get(p); }
         @Override public long getItemId(int p) { return p; }
 
@@ -119,6 +136,11 @@ public class AppsActivity extends Activity {
                 text = (TextView) row.getChildAt(1);
             }
             PackageManager pm = getPackageManager();
+            if (pos == apps.size()) {
+                icon.setImageResource(android.R.drawable.ic_menu_add);
+                text.setText("    Request an app\u2026");
+                return row;
+            }
             ResolveInfo ri = apps.get(pos);
             Drawable d = ri.loadIcon(pm);
             icon.setImageDrawable(d);

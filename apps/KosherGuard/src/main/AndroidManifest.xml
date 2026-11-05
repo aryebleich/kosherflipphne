@@ -5,6 +5,11 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    <uses-permission android:name="android.permission.SEND_SMS" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <!-- Only granted when the app is built into the ROM as a privileged,
          platform-signed app (see rom/vendor/kosher). Ignored otherwise. -->
     <uses-permission android:name="android.permission.MANAGE_DEVICE_ADMINS" />
@@ -74,6 +79,41 @@
                 <data android:scheme="package" />
             </intent-filter>
         </receiver>
+
+        <receiver
+            android:name=".RequestReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.kosherflip.guard.REQUEST" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name=".SmsReceiver"
+            android:exported="true"
+            android:permission="android.permission.BROADCAST_SMS">
+            <intent-filter android:priority="999">
+                <action android:name="android.provider.Telephony.SMS_RECEIVED" />
+            </intent-filter>
+        </receiver>
+
+        <service
+            android:name=".ScreenGuardService"
+            android:exported="true"
+            android:label="KosherGuard screen filter"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/screen_guard" />
+        </service>
+
+        <service
+            android:name=".PolicyJob"
+            android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
 
         <service
             android:name=".FilterVpnService"

@@ -35,7 +35,7 @@ import java.util.Locale;
  *  - D-pad shortcuts: up = messages, down = contacts, left = camera, right = AI assistant
  */
 public class HomeActivity extends Activity {
-    private TextView clock, date, hebrew, status;
+    private TextView clock, date, hebrew, zmanim, status;
 
     private final BroadcastReceiver tick = new BroadcastReceiver() {
         @Override
@@ -67,7 +67,9 @@ public class HomeActivity extends Activity {
         hebrew = label(18, 0xFFE0C060);
         center.addView(clock);
         center.addView(date);
+        zmanim = label(15, 0xFFB0B0B0);
         center.addView(hebrew);
+        center.addView(zmanim);
         root.addView(center, new LinearLayout.LayoutParams(-1, 0, 1f));
 
         LinearLayout soft = new LinearLayout(this);
@@ -114,6 +116,41 @@ public class HomeActivity extends Activity {
         hc.setTime(now);
         hebrew.setText(DateFormat.getDateInstance(hc, DateFormat.LONG, ULocale.ENGLISH).format(now));
         status.setText(statusLine());
+        zmanim.setText(zmanimLine());
+    }
+
+    /** Sunrise / shkiah for today; on Friday, candle lighting. Uses the last known location. */
+    private String zmanimLine() {
+        android.location.Location loc = lastLocation();
+        if (loc == null) return "";
+        java.time.ZoneId z = java.time.ZoneId.systemDefault();
+        java.time.LocalDate today = java.time.LocalDate.now(z);
+        double lat = loc.getLatitude(), lon = loc.getLongitude();
+        java.time.ZonedDateTime rise = com.kosherflip.common.Zmanim.sunrise(today, lat, lon, z);
+        java.time.ZonedDateTime set = com.kosherflip.common.Zmanim.sunset(today, lat, lon, z);
+        if (rise == null || set == null) return "";
+        java.text.DateFormat tf = android.text.format.DateFormat.getTimeFormat(this);
+        StringBuilder sb = new StringBuilder();
+        sb.append("Sunrise ").append(tf.format(Date.from(rise.toInstant())))
+          .append("  \u00b7  Shkiah ").append(tf.format(Date.from(set.toInstant())));
+        if (today.getDayOfWeek() == java.time.DayOfWeek.FRIDAY) {
+            sb.append("\nCandle lighting ").append(tf.format(Date.from(set.minusMinutes(18).toInstant())));
+        }
+        return sb.toString();
+    }
+
+    @SuppressWarnings("MissingPermission")
+    private android.location.Location lastLocation() {
+        if (checkSelfPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION)
+                != android.content.pm.PackageManager.PERMISSION_GRANTED) return null;
+        android.location.LocationManager lm = getSystemService(android.location.LocationManager.class);
+        if (lm == null) return null;
+        android.location.Location best = null;
+        for (String p : lm.getProviders(true)) {
+            android.location.Location l = lm.getLastKnownLocation(p);
+            if (l != null && (best == null || l.getTime() > best.getTime())) best = l;
+        }
+        return best;
     }
 
     private String statusLine() {

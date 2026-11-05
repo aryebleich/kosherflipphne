@@ -26,7 +26,7 @@ import java.util.concurrent.Executors;
 public class ChatActivity extends Activity {
     private final ExecutorService worker = Executors.newSingleThreadExecutor();
     private Assistant assistant;
-    private String apiKey;
+    private String configKey;
     private LinearLayout transcript;
     private ScrollView scroll;
     private EditText input;
@@ -69,8 +69,8 @@ public class ChatActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        String key = resolveKey();
-        if (key == null) {
+        Bundle cfg = resolveConfig();
+        if (cfg == null) {
             input.setEnabled(false);
             transcript.removeAllViews();
             add("The AI assistant is not set up yet.\n\nThe phone's admin can turn it on in "
@@ -78,22 +78,31 @@ public class ChatActivity extends Activity {
             return;
         }
         input.setEnabled(true);
-        if (!key.equals(apiKey)) {
-            apiKey = key;
-            assistant = new Assistant(key);
+        String id = cfg.toString();
+        if (!id.equals(configKey)) {
+            configKey = id;
+            Provider provider = Assistant.create(cfg.getString("provider", "gemini"), cfg.getString("api_key", ""),
+                    cfg.getString("model", ""), cfg.getString("base_url", ""));
+            java.util.List<String> words = new java.util.ArrayList<>();
+            for (String w : cfg.getString("custom_words", "").split("\n")) if (!w.trim().isEmpty()) words.add(w.trim());
+            assistant = new Assistant(provider, com.kosherflip.common.WordFilter.standard(words));
             transcript.removeAllViews();
             add("Shalom! Ask me anything — I keep answers short and clean.", false);
         }
         input.requestFocus();
     }
 
-    /** Key from KosherGuard's managed configuration; if the phone is unmanaged, from local settings. */
-    private String resolveKey() {
+    /**
+     * Settings from KosherGuard's managed configuration; if the phone is
+     * unmanaged, a free Gemini key entered here. Null if not set up.
+     */
+    private Bundle resolveConfig() {
         RestrictionsManager rm = getSystemService(RestrictionsManager.class);
         Bundle r = rm != null ? rm.getApplicationRestrictions() : null;
         if (r != null && r.getBoolean("managed", false)) {
             String k = r.getString("api_key", "");
-            return k == null || k.trim().isEmpty() ? null : k.trim();
+            boolean needsKey = !"openai".equals(r.getString("provider", "gemini"));
+            return needsKey && (k == null || k.trim().isEmpty()) ? null : r;
         }
         SharedPreferences sp = getSharedPreferences("ai", Context.MODE_PRIVATE);
         String k = sp.getString("api_key", "");
@@ -101,16 +110,19 @@ public class ChatActivity extends Activity {
             promptForLocalKey(sp);
             return null;
         }
-        return k;
+        Bundle b = new Bundle();
+        b.putString("provider", "gemini");
+        b.putString("api_key", k);
+        return b;
     }
 
     private void promptForLocalKey(SharedPreferences sp) {
         EditText e = new EditText(this);
-        e.setHint("sk-ant-...");
+        e.setHint("Free Gemini API key");
         e.setSingleLine(true);
         new android.app.AlertDialog.Builder(this)
-                .setTitle("Claude API key")
-                .setMessage("This phone is not managed by KosherGuard. Enter a Claude API key to use the assistant.")
+                .setTitle("Set up the free AI")
+                .setMessage("Get a free key at aistudio.google.com (\"Get API key\") and enter it here.")
                 .setView(e)
                 .setPositiveButton("Save", (d, w) -> {
                     sp.edit().putString("api_key", e.getText().toString().trim()).apply();

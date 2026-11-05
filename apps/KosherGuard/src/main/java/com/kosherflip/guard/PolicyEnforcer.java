@@ -36,6 +36,19 @@ public final class PolicyEnforcer {
                 "com.android.cellbroadcastreceiver", "com.google.android.cellbroadcastreceiver");
     }
 
+    /** Visible during Shabbos mode. */
+    private static final Set<String> SHABBOS_APPS = new HashSet<>();
+    /** Hidden in talk-only mode. */
+    private static final Set<String> MESSAGING = new HashSet<>();
+    static {
+        Collections.addAll(SHABBOS_APPS, BuildConfigShim.GUARD, BuildConfigShim.LAUNCHER,
+                "com.android.dialer", "com.google.android.dialer", "com.android.contacts",
+                "com.google.android.contacts", "com.android.deskclock", "com.google.android.deskclock",
+                "com.android.settings", "com.android.stk");
+        Collections.addAll(MESSAGING, "com.android.messaging", "com.android.mms",
+                "com.google.android.apps.messaging", "com.whatsapp", "com.whatsapp.w4b");
+    }
+
     private PolicyEnforcer() {}
 
     public static ComponentName admin(Context ctx) {
@@ -70,6 +83,16 @@ public final class PolicyEnforcer {
         set(dpm, admin, UserManager.DISALLOW_UNINSTALL_APPS, !p.allowAppInstalls);
         set(dpm, admin, UserManager.DISALLOW_INSTALL_APPS, !p.allowAppInstalls);
         set(dpm, admin, UserManager.DISALLOW_DEBUGGING_FEATURES, p.lockUsbDebugging);
+        set(dpm, admin, UserManager.DISALLOW_CONFIG_TETHERING, p.blockTethering);
+        set(dpm, admin, UserManager.DISALLOW_USB_FILE_TRANSFER, p.blockUsbTransfer);
+        set(dpm, admin, UserManager.DISALLOW_BLUETOOTH_SHARING, p.blockUsbTransfer);
+        set(dpm, admin, UserManager.DISALLOW_MOUNT_PHYSICAL_MEDIA, p.blockUsbTransfer);
+        try {
+            dpm.setCameraDisabled(admin, !p.cameraEnabled);
+        } catch (Exception e) {
+            Log.w(TAG, "camera", e);
+        }
+        grantOwnPermissions(ctx, dpm, admin);
         if (Build.VERSION.SDK_INT >= 29) {
             set(dpm, admin, UserManager.DISALLOW_INSTALL_UNKNOWN_SOURCES_GLOBALLY, true);
             set(dpm, admin, UserManager.DISALLOW_CONFIG_PRIVATE_DNS, true);
@@ -84,11 +107,15 @@ public final class PolicyEnforcer {
         report.append("Restrictions applied.\n");
 
         // 2. Apps: hide every launcher app that is not allowed.
+        boolean shabbos = isShabbosNow(p);
         int hidden = 0, shown = 0;
         for (String pkg : launcherPackages(ctx)) {
-            boolean allow = BuildConfigShim.AI.equals(pkg)
-                    ? p.aiEnabled
-                    : CORE.contains(pkg) || p.allowedApps.contains(pkg);
+            boolean allow;
+            if (shabbos) allow = SHABBOS_APPS.contains(pkg);
+            else if (BuildConfigShim.AI.equals(pkg)) allow = p.aiEnabled;
+            else if (BuildConfigShim.BROWSER.equals(pkg)) allow = p.browserEnabled;
+            else if (p.talkOnly && MESSAGING.contains(pkg)) allow = false;
+            else allow = CORE.contains(pkg) || p.allowedApps.contains(pkg);
             try {
                 boolean wasHidden = dpm.isApplicationHidden(admin, pkg);
                 if (allow == wasHidden) {
@@ -100,16 +127,35 @@ public final class PolicyEnforcer {
             }
         }
         report.append("Apps allowed: ").append(shown).append(", hidden: ").append(hidden).append('\n');
+        if (shabbos) report.append("Shabbos mode is ON now.\n");
+        if (p.talkOnly) report.append("Talk-only mode: texts are auto-answered.\n");
 
-        // 3. Hand the AI key to the KosherAI app through managed configuration.
+        // 3. Settings for KosherAI and KosherBrowser through managed configuration.
+        String words = joinLines(p.customWords);
         Bundle ai = new Bundle();
-        ai.putString("api_key", p.aiApiKey == null ? "" : p.aiApiKey);
         ai.putBoolean("managed", true);
+        ai.putString("provider", p.aiProvider);
+        ai.putString("model", p.aiModel);
+        ai.putString("base_url", p.aiBaseUrl);
+        ai.putString("api_key", p.aiApiKey == null ? "" : p.aiApiKey);
+        ai.putString("custom_words", words);
+        Bundle br = new Bundle();
+        br.putBoolean("managed", true);
+        br.putString("image_mode", p.imageMode);
+        br.putBoolean("block_video", p.blockVideo);
+        br.putBoolean("allow_apk", p.allowAppInstalls);
+        br.putString("download_types", joinLines(p.allowedDownloadTypes));
+        br.putString("trusted_sites", joinLines(trustedSites(ctx, p)));
+        br.putString("custom_words", words);
         try {
             dpm.setApplicationRestrictions(admin, BuildConfigShim.AI, ai);
+            dpm.setApplicationRestrictions(admin, BuildConfigShim.BROWSER, br);
         } catch (Exception e) {
-            Log.w(TAG, "ai config", e);
+            Log.w(TAG, "managed config", e);
         }
+
+        // 3b. Screen filter (accessibility service).
+        report.append(ensureScreenGuard(ctx, dpm, admin, p.screenFilter)).append('\n');
 
         // 4. Always-on DNS filter VPN.
         try {
@@ -132,7 +178,73 @@ public final class PolicyEnforcer {
                 Log.w(TAG, "home", e);
             }
         }
+        PolicyJob.schedule(ctx);
         return report.toString();
+    }
+
+    static boolean isShabbosNow(Policy p) {
+        if ("on".equals(p.shabbosMode)) return true;
+        if (!"auto".equals(p.shabbosMode)) return false;
+        return JewishCalendar.isNow(p, java.time.ZonedDateTime.now());
+    }
+
+    /** Sites where the browser may show pictures in "trusted" image mode. */
+    static Set<String> trustedSites(Context ctx, Policy p) {
+        Set<String> out = new java.util.TreeSet<>(Categories.domains(Categories.load(ctx), p.trustedCategories));
+        for (String d : p.allowedDomains) if (!d.startsWith("=")) out.add(d);
+        return out;
+    }
+
+    private static String joinLines(Set<String> set) {
+        StringBuilder sb = new StringBuilder();
+        for (String s : set) sb.append(s).append('\n');
+        return sb.toString();
+    }
+
+    private static void grantOwnPermissions(Context ctx, DevicePolicyManager dpm, ComponentName admin) {
+        String[] guard = {"android.permission.RECEIVE_SMS", "android.permission.SEND_SMS",
+                "android.permission.POST_NOTIFICATIONS", "android.permission.ACCESS_COARSE_LOCATION",
+                "android.permission.ACCESS_FINE_LOCATION"};
+        for (String perm : guard) grant(dpm, admin, ctx.getPackageName(), perm);
+        grant(dpm, admin, BuildConfigShim.LAUNCHER, "android.permission.ACCESS_COARSE_LOCATION");
+        grant(dpm, admin, BuildConfigShim.BROWSER, "android.permission.POST_NOTIFICATIONS");
+    }
+
+    private static void grant(DevicePolicyManager dpm, ComponentName admin, String pkg, String perm) {
+        try {
+            dpm.setPermissionGrantState(admin, pkg, perm, DevicePolicyManager.PERMISSION_GRANT_STATE_GRANTED);
+        } catch (Exception ignored) {
+            // App not installed, or permission not requested by it.
+        }
+    }
+
+    /**
+     * Turns the screen filter on (or off). Needs WRITE_SECURE_SETTINGS: granted
+     * automatically in the ROM build, or once by adb on the apps-only install.
+     * Only KosherGuard (and built-in system services) may be accessibility
+     * services, so no other app can read or control the screen.
+     */
+    static String ensureScreenGuard(Context ctx, DevicePolicyManager dpm, ComponentName admin, boolean on) {
+        String me = new ComponentName(ctx, ScreenGuardService.class).flattenToString();
+        try {
+            dpm.setPermittedAccessibilityServices(admin, java.util.Collections.singletonList(ctx.getPackageName()));
+        } catch (Exception ignored) {
+        }
+        if (ctx.checkSelfPermission("android.permission.WRITE_SECURE_SETTINGS") != PackageManager.PERMISSION_GRANTED) {
+            return on ? "Screen filter: needs one-time setup (see docs) or turn it on in Accessibility settings."
+                    : "Screen filter: off.";
+        }
+        android.content.ContentResolver cr = ctx.getContentResolver();
+        String cur = android.provider.Settings.Secure.getString(cr, android.provider.Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
+        Set<String> parts = new java.util.LinkedHashSet<>();
+        if (cur != null) for (String s : cur.split(":")) if (!s.isEmpty()) parts.add(s);
+        boolean changed = on ? parts.add(me) : parts.remove(me);
+        if (changed) {
+            android.provider.Settings.Secure.putString(cr, android.provider.Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES,
+                    String.join(":", parts));
+        }
+        if (on) android.provider.Settings.Secure.putInt(cr, android.provider.Settings.Secure.ACCESSIBILITY_ENABLED, 1);
+        return on ? "Screen filter: on (every app)." : "Screen filter: off.";
     }
 
     /** Removes all restrictions and gives up device ownership (admin "uninstall"). */
@@ -147,13 +259,18 @@ public final class PolicyEnforcer {
                 UserManager.DISALLOW_ADD_USER, UserManager.DISALLOW_REMOVE_USER,
                 UserManager.DISALLOW_CONFIG_VPN, UserManager.DISALLOW_INSTALL_UNKNOWN_SOURCES,
                 UserManager.DISALLOW_APPS_CONTROL, UserManager.DISALLOW_UNINSTALL_APPS,
-                UserManager.DISALLOW_INSTALL_APPS, UserManager.DISALLOW_DEBUGGING_FEATURES};
+                UserManager.DISALLOW_INSTALL_APPS, UserManager.DISALLOW_DEBUGGING_FEATURES,
+                UserManager.DISALLOW_CONFIG_TETHERING, UserManager.DISALLOW_USB_FILE_TRANSFER,
+                UserManager.DISALLOW_BLUETOOTH_SHARING, UserManager.DISALLOW_MOUNT_PHYSICAL_MEDIA};
         for (String r : all) set(dpm, admin, r, false);
         if (Build.VERSION.SDK_INT >= 29) {
             set(dpm, admin, UserManager.DISALLOW_INSTALL_UNKNOWN_SOURCES_GLOBALLY, false);
             set(dpm, admin, UserManager.DISALLOW_CONFIG_PRIVATE_DNS, false);
         }
         try { dpm.setAlwaysOnVpnPackage(admin, null, false); } catch (Exception ignored) { }
+        try { dpm.setCameraDisabled(admin, false); } catch (Exception ignored) { }
+        try { dpm.setPermittedAccessibilityServices(admin, null); } catch (Exception ignored) { }
+        ensureScreenGuard(ctx, dpm, admin, false);
         dpm.clearPackagePersistentPreferredActivities(admin, BuildConfigShim.LAUNCHER);
         dpm.setUninstallBlocked(admin, ctx.getPackageName(), false);
         dpm.clearDeviceOwnerApp(ctx.getPackageName());

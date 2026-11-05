@@ -11,7 +11,9 @@
    - `KosherGuard` – privileged, **platform-signed**; overrides AOSP `Provision`,
      `Browser2` and `QuickSearchBox`.
    - `FlipLauncher` – overrides `Launcher3`/`Launcher3QuickStep`.
+   - `KosherBrowser` – filtered WebView browser.
    - `KosherAI`.
+   All of them use `apps/common` (word filter, zmanim).
 3. **Optional Google apps** – MindTheGapps (`WITH_GMS=true`).
 
 ## First boot (ROM)
@@ -38,19 +40,33 @@ disables `SetupActivity`, and is made device owner by `adb shell dpm set-device-
 | Enforcer | `PolicyEnforcer.java` | user restrictions, hides non-approved apps, always-on VPN, home screen, AI managed config |
 | DNS filter | `FilterVpnService.java`, `DnsPacket.java`, `DnsFilter.java` | DNS-only local VPN: NXDOMAIN for blocked names, forward the rest to CleanBrowsing Family |
 | Admin | `AdminActivity.java`, `Pin.java` | PIN console (salted hash, lock-out after 5 tries) |
+| Profiles & categories | `Profiles.java`, `Categories.java`, `assets/categories.json` | presets and 14 website categories |
+| Screen filter | `ScreenGuardService.java` | accessibility service: reads on-screen text in every app, covers & leaves bad content |
+| Learning | `Stats.java`, `Requests.java`, `RequestReceiver.java` | insights, suggestions, request/approve queue |
+| Phone modes | `SmsReceiver.java`, `JewishCalendar.java`, `PolicyJob.java` | talk-only, Shabbos/Yom Tov mode, 15-minute re-apply |
+| Speed | `DnsCache.java` | TTL-aware answer cache inside the VPN |
 | Triggers | `BootReceiver.java`, `GuardAdminReceiver.java` | re-apply at boot, on package install/update, on becoming owner |
 
 Only DNS packets enter the VPN tunnel (a route to the virtual resolver
 `10.111.222.1`), so normal data is not slowed down.
 
+## KosherBrowser
+
+WebView browser configured by KosherGuard (managed configuration). Per page:
+`setBlockNetworkImage` + CSS for picture modes, request interception for ads and
+video, an injected script that sends the page text (and every change, debounced)
+to the word filter, SafeSearch rewriting, and a block page whose "Request access"
+button sends a request to KosherGuard. DNS errors (sites KosherGuard blocks) show
+the same block page. A D-pad pointer dispatches taps for keypad-only phones.
+
 ## KosherAI
 
-`Assistant.java` calls the Claude Messages API through the official Anthropic
-Java SDK (`com.anthropic:anthropic-java`) with a fixed modesty/“kosher phone”
-system prompt, low effort for quick short answers, and server-side refusal
-fallbacks. The API key is set by the admin in KosherGuard and delivered as an
-Android *managed configuration* (`setApplicationRestrictions`), so the user never
-sees it. `api.anthropic.com` is on the always-allowed list.
+`Assistant.java` keeps the history and the fixed modest system prompt and runs
+the word filter on each question (bad questions are never sent) and answer.
+Providers: `GeminiProvider` (default, free API key, Google safety settings at
+`BLOCK_LOW_AND_ABOVE`), `OpenAiProvider` (any OpenAI-compatible endpoint, e.g. free
+models), `ClaudeProvider` (official Anthropic Java SDK). Provider, key and model are
+set by the admin in KosherGuard and delivered as managed configuration.
 
 ## FlipLauncher
 

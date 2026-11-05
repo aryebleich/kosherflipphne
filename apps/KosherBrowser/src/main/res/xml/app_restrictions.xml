@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<restrictions xmlns:android="http://schemas.android.com/apk/res/android">
+    <restriction android:key="managed" android:restrictionType="bool" android:defaultValue="false" android:title="Managed by KosherGuard" />
+    <restriction android:key="image_mode" android:restrictionType="string" android:title="Pictures: none, trusted, blur or all" />
+    <restriction android:key="block_video" android:restrictionType="bool" android:defaultValue="true" android:title="Block video" />
+    <restriction android:key="allow_apk" android:restrictionType="bool" android:defaultValue="false" android:title="Allow APK downloads" />
+    <restriction android:key="download_types" android:restrictionType="string" android:title="Allowed download file types" />
+    <restriction android:key="trusted_sites" android:restrictionType="string" android:title="Trusted sites" />
+    <restriction android:key="custom_words" android:restrictionType="string" android:title="Extra filter words" />
+</restrictions>

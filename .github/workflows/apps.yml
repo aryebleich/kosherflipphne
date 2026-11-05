@@ -49,12 +49,12 @@ jobs:
           KOSHERFLIP_KEYSTORE_PASSWORD: ${{ secrets.KOSHERFLIP_KEYSTORE_PASSWORD }}
           KOSHERFLIP_KEY_ALIAS: ${{ secrets.KOSHERFLIP_KEY_ALIAS }}
           KOSHERFLIP_KEY_PASSWORD: ${{ secrets.KOSHERFLIP_KEY_PASSWORD }}
-        run: ./gradlew --no-daemon testReleaseUnitTest assembleRelease
+        run: ./gradlew --no-daemon :common:test testReleaseUnitTest assembleRelease
 
       - name: Collect APKs
         run: |
           mkdir -p out/apks
-          for a in KosherGuard FlipLauncher KosherAI; do
+          for a in KosherGuard FlipLauncher KosherBrowser KosherAI; do
             cp apps/$a/build/outputs/apk/release/$a-release.apk out/apks/$a.apk
           done
           cp scripts/install-on-phone.sh out/apks/

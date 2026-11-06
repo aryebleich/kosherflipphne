@@ -175,6 +175,8 @@ public final class Policy {
             p.upstreamDns.add("185.228.169.168");
         }
         p.allowedApps.add(BuildConfigShim.GUARD);
+        // Carrier servers (VoLTE, Wi-Fi calling) must always resolve, on every carrier.
+        p.allowedDomains.add("3gppnetwork.org");
         if (!o.has("blockedCategories")) {
             // Settings saved by KosherGuard 1.0: fill in the new options from the profile.
             Profiles.applyCategoryDefaults(p, p.profile);

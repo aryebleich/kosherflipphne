@@ -30,6 +30,17 @@ public class FilterVpnService extends VpnService {
     private static final String VIRTUAL_DNS = "10.111.222.1";
     private static final String TUN_ADDR = "10.111.222.2";
 
+    /** System telephony components that must reach the carrier directly. */
+    static final String[] TELEPHONY_BYPASS = {
+            "com.android.phone", "com.android.server.telecom", "com.android.mms.service",
+            "com.android.providers.telephony", "com.android.carrierconfig", "com.android.stk",
+            "com.android.ims.rcsservice", "com.android.imsserviceentitlement",
+            "com.qualcomm.qti.ims", "org.codeaurora.ims", "com.qualcomm.qti.uceShimService",
+            "com.mediatek.ims", "com.sec.imsservice", "com.google.android.ims",
+            "com.android.cellbroadcastreceiver", "com.google.android.cellbroadcastreceiver",
+            "com.android.cellbroadcastservice", "com.qualcomm.qti.telephonyservice",
+            "com.android.emergency", "com.google.android.carrier", "com.google.android.carriersetup"};
+
     private ParcelFileDescriptor tun;
     private Thread reader;
     private ExecutorService pool;
@@ -61,6 +72,15 @@ public class FilterVpnService extends VpnService {
                     .addDnsServer(VIRTUAL_DNS)
                     .addRoute(VIRTUAL_DNS, 32)
                     .setBlocking(true);
+            // Never filter KosherGuard itself or the phone's calling/MMS stack: calls, VoLTE,
+            // Wi-Fi calling and picture messages keep working on every carrier.
+            for (String pkg : TELEPHONY_BYPASS) {
+                try {
+                    b.addDisallowedApplication(pkg);
+                } catch (Exception ignored) {
+                    // not installed on this phone
+                }
+            }
             try {
                 b.addDisallowedApplication(getPackageName());
             } catch (Exception ignored) {

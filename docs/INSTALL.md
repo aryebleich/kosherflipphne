@@ -183,6 +183,8 @@ The phone is ready. Press **OK** on the home screen for the app list, the number
 ## Phone-specific notes
 
 ### CAT S22 Flip
+
+👉 Step-by-step S22 guide: **[S22-ANDROID11.md](S22-ANDROID11.md)** (phone only, calls on every carrier).
 - Android 11 (Go edition), Snapdragon 215, 2 GB RAM, 2.8" touch screen + keypad.
   Sold unlocked and by US carriers (T-Mobile, Verizon and others).
 - **Phone only** works (Android 11: the screen filter switch is not greyed out). For Full protection use

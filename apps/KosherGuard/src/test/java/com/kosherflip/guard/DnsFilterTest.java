@@ -237,4 +237,15 @@ public class DnsFilterTest {
         Profiles.apply(p, Profiles.HEIMISH);
         assertFalse(PolicyEnforcer.isAppAllowed(p, false, "com.android.chrome"));
     }
+
+    @Test
+    public void carrierServersAlwaysResolve() {
+        Policy p = new Policy();
+        Profiles.apply(p, Profiles.KOSHER); // strictest: only trusted + always-allowed
+        p.allowedDomains.add("3gppnetwork.org");
+        DnsFilter f = new DnsFilter(p, cats());
+        assertTrue(f.isAllowed("epdg.epc.mnc260.mcc310.pub.3gppnetwork.org")); // Wi-Fi calling
+        assertTrue(f.isAllowed("ims.mnc480.mcc311.3gppnetwork.org"));
+        assertTrue(java.util.Arrays.asList(FilterVpnService.TELEPHONY_BYPASS).contains("com.android.phone"));
+    }
 }

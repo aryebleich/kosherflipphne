@@ -42,6 +42,8 @@
     "com.google.android.gm"
   ],
   "allowedDomains": [
+    "gsma.com",
+    "3gppnetwork.org",
     "api.anthropic.com",
     "generativelanguage.googleapis.com",
     "connectivitycheck.gstatic.com",

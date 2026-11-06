@@ -27,7 +27,8 @@ as before. KosherFlip only adds the filter and the apps.
 You can start with **Phone only** and upgrade to Full protection later (Method A or B).
 
 > ⚠️ Methods A and B start with a **factory reset**, which erases the phone.
-> Save contacts and photos first (copy contacts to the SIM card or to a Google account).
+> Save contacts and photos first (copy contacts to the SIM card or to a Google account), and
+> **back up authenticator apps**: [BACKUP-AUTHENTICATORS.md](BACKUP-AUTHENTICATORS.md).
 
 ---
 

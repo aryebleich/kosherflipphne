@@ -16,6 +16,15 @@ ask() { read -r -p "$1 [y/N] " a; [[ "$a" == y || "$a" == Y ]]; }
 
 command -v fastboot >/dev/null && command -v adb >/dev/null || { echo "Install Android platform-tools first"; exit 1; }
 [[ -f "$VBMETA" ]] || { echo "Missing $VBMETA"; exit 1; }
+cat <<'MSG'
+
+This ERASES all apps and data on the phone, including AUTHENTICATOR codes
+(Google Authenticator, Microsoft Authenticator, Authy, 2FAS, ...).
+Back them up first and check the codes on the backup: docs/BACKUP-AUTHENTICATORS.md
+MSG
+read -r -p "Type BACKED UP when your authenticators (and contacts/photos) are backed up and checked: " ok
+[[ "$ok" == "BACKED UP" ]] || { echo "Stopped. Nothing was changed."; exit 1; }
+
 if [[ "$IMG" == *.xz ]]; then say "Decompressing $IMG"; xz -dkf "$IMG"; IMG="${IMG%.xz}"; fi
 
 if adb get-state >/dev/null 2>&1; then

@@ -32,7 +32,9 @@ From the repository's **Releases**, open the newest release called
 
 ## 2. Prepare the phone
 
-1. Back up contacts and photos.
+1. **Back up your authenticator apps** (Google Authenticator, Microsoft Authenticator, Authy, 2FAS…)
+   and check the codes on the backup: [BACKUP-AUTHENTICATORS.md](BACKUP-AUTHENTICATORS.md).
+   Flashing erases them. Also back up contacts and photos.
 2. Settings → About phone → tap **Build number** 7 times.
 3. Settings → System → Advanced → Developer options → turn on **OEM unlocking** (if shown) and **USB debugging**.
 4. Connect the USB cable and accept *Allow USB debugging*.

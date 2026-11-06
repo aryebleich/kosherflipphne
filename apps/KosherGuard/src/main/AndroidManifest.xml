@@ -10,6 +10,7 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <!-- Only granted when the app is built into the ROM as a privileged,
          platform-signed app (see rom/vendor/kosher). Ignored otherwise. -->
     <uses-permission android:name="android.permission.MANAGE_DEVICE_ADMINS" />
@@ -79,6 +80,33 @@
                 <data android:scheme="package" />
             </intent-filter>
         </receiver>
+
+        <!-- QR-code / zero-touch provisioning (Android 10+) -->
+        <activity
+            android:name=".ProvisioningActivities$Mode"
+            android:exported="true"
+            android:permission="android.permission.BIND_DEVICE_ADMIN"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
+            <intent-filter>
+                <action android:name="android.app.action.GET_PROVISIONING_MODE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".ProvisioningActivities$Compliance"
+            android:exported="true"
+            android:permission="android.permission.BIND_DEVICE_ADMIN"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
+            <intent-filter>
+                <action android:name="android.app.action.ADMIN_POLICY_COMPLIANCE" />
+                <action android:name="android.app.action.PROVISIONING_SUCCESSFUL" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <receiver
+            android:name=".Companions$InstallResultReceiver"
+            android:exported="false" />
 
         <receiver
             android:name=".RequestReceiver"

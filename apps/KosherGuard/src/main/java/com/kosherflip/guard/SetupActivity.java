@@ -19,6 +19,7 @@ public class SetupActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        SystemBars.pad(this);
         TextView tv = Ui.text(this, "KosherFlip\nSetting up the filter…", 22);
         tv.setGravity(android.view.Gravity.CENTER);
         setContentView(tv);

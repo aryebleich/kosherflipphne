@@ -29,6 +29,7 @@ public class AdminActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        SystemBars.pad(this);
         SetupActivity.disableSelfIfNotRom(this);
         if (PolicyEnforcer.isDeviceOwner(this)) applyQuietly(); // self-heal whenever the console opens
         if (!Pin.isSet(this)) showCreatePin();
@@ -147,6 +148,9 @@ public class AdminActivity extends Activity {
                 () -> toggle(q -> q.blockUsbTransfer = !q.blockUsbTransfer));
         item("Shabbos mode: " + p.shabbosMode, this::editShabbos);
         item("AI assistant: " + (p.aiEnabled ? p.aiProvider : "off"), this::editAi);
+        item("Install / update KosherFlip apps", this::updateApps);
+        item("T9 keyboard (English/Hebrew/Yiddish) as default: " + onOff(p.t9Keyboard),
+                () -> toggle(q -> q.t9Keyboard = !q.t9Keyboard));
         item("App installs: " + (p.allowAppInstalls ? "ALLOWED" : "blocked"), this::toggleInstalls);
         item("USB debugging lock: " + onOff(p.lockUsbDebugging), this::toggleUsb);
         item("Apply now", this::applyNow);
@@ -183,6 +187,25 @@ public class AdminActivity extends Activity {
     /** Applies in the background and stays on the menu. */
     private void applyQuietly() {
         new Thread(() -> PolicyEnforcer.apply(this)).start();
+    }
+
+    private void updateApps() {
+        inMenu = false;
+        LinearLayout col = Ui.column(this);
+        col.addView(Ui.title(this, "Installing / updating\u2026"));
+        col.addView(Ui.text(this, "Downloading the latest KosherFlip apps. This can take a few minutes on a slow connection.", 15));
+        setScroll(col);
+        String url = Policy.load(this).updateUrl;
+        new Thread(() -> {
+            String report = Companions.installOrUpdate(this, url);
+            runOnUiThread(() -> {
+                LinearLayout c = Ui.column(this);
+                c.addView(Ui.title(this, "Apps"));
+                c.addView(Ui.text(this, report, 15));
+                c.addView(Ui.button(this, "OK", v -> showMenu()));
+                setScroll(c);
+            });
+        }).start();
     }
 
     private void chooseProfile() {

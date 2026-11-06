@@ -2,7 +2,6 @@ package com.kosherflip.browser;
 
 import java.net.URI;
 import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Locale;
@@ -32,7 +31,11 @@ final class UrlRules {
         if (s.isEmpty()) return null;
         if (s.matches("(?i)^https?://.*")) return s;
         if (!s.contains(" ") && s.matches("(?i)^[a-z0-9.-]+\\.[a-z]{2,}(/.*)?$")) return "https://" + s;
-        return SEARCH + URLEncoder.encode(s, StandardCharsets.UTF_8);
+        try {
+            return SEARCH + URLEncoder.encode(s, "UTF-8"); // Charset overload needs Android 13
+        } catch (java.io.UnsupportedEncodingException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     static String host(String url) {

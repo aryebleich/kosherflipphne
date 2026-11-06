@@ -8,6 +8,7 @@ PRODUCT_PACKAGES += \
     FlipLauncher \
     KosherBrowser \
     KosherAI \
+    KosherKeys \
     privapp-permissions-kosherflip.xml \
     kosherflip-policy.json
 

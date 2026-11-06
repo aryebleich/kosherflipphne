@@ -10,15 +10,17 @@ ext.configureKosherApp = { project, String appId ->
 
         defaultConfig {
             applicationId appId
-            minSdk 28          // Android 9+: runs on existing Android flip phones too
+            minSdk 26          // Android 8+: runs on existing Android (and Android Go) flip phones too
             targetSdk 36       // Android 16
-            versionCode 1
-            versionName "1.0.0"
+            // CI build number = version, so every release updates the previous one.
+            def build = (System.getenv("GITHUB_RUN_NUMBER") ?: "1") as int
+            versionCode build
+            versionName "1.1.${build}"
         }
 
         signingConfigs {
             release {
-                // CI / release builds: provide a keystore through environment variables.
+                // Your private release key (CI secrets / environment, see signing/README.md).
                 def ks = System.getenv("KOSHERFLIP_KEYSTORE")
                 if (ks) {
                     storeFile project.file(ks)
@@ -32,6 +34,8 @@ ext.configureKosherApp = { project, String appId ->
         buildTypes {
             release {
                 minifyEnabled false
+                // Without a private key, builds are signed with a throw-away debug key:
+                // fine for testing, but they can't update each other.
                 signingConfig System.getenv("KOSHERFLIP_KEYSTORE") ? signingConfigs.release : signingConfigs.debug
             }
         }
@@ -42,7 +46,9 @@ ext.configureKosherApp = { project, String appId ->
         }
 
         lint {
-            abortOnError false
+            // CI runs lintRelease: fail on any API call newer than minSdk (old flip phones).
+            checkOnly += ["NewApi"]
+            abortOnError true
             checkReleaseBuilds false
         }
 

@@ -6,6 +6,11 @@ on:
     tags: ["v*"]
   pull_request:
   workflow_dispatch:
+    inputs:
+      publish:
+        description: "Publish a GitHub release (what phones download from)"
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -15,6 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       HAS_KEY: ${{ secrets.KOSHERFLIP_KEYSTORE_B64 != '' }}
+      APPS: KosherGuard FlipLauncher KosherBrowser KosherAI KosherKeys
     steps:
       - uses: actions/checkout@v4
 
@@ -29,35 +35,49 @@ jobs:
           SDKM="$(ls -d "$ANDROID_HOME"/cmdline-tools/*/bin | sort -V | tail -1)/sdkmanager"
           yes | "$SDKM" --licenses > /dev/null || true
           "$SDKM" "platforms;android-36" "build-tools;36.0.0"
+          echo "$ANDROID_HOME/build-tools/36.0.0" >> "$GITHUB_PATH"
 
       - uses: gradle/actions/setup-gradle@v4
 
       - name: Validate filter policy
         run: |
           python3 -m json.tool apps/KosherGuard/src/main/assets/default_policy.json > /dev/null
+          python3 -m json.tool apps/KosherGuard/src/main/assets/categories.json > /dev/null
           cmp apps/KosherGuard/src/main/assets/default_policy.json rom/vendor/kosher/prebuilt/policy.json
 
-      - name: Decode signing key
+      - name: Decode private signing key
         if: env.HAS_KEY == 'true'
         env:
           KEYSTORE_B64: ${{ secrets.KOSHERFLIP_KEYSTORE_B64 }}
         run: echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks" && echo "KOSHERFLIP_KEYSTORE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
 
-      - name: Test and build
+      - name: Test, lint (Android 8+ API check) and build
         working-directory: apps
         env:
           KOSHERFLIP_KEYSTORE_PASSWORD: ${{ secrets.KOSHERFLIP_KEYSTORE_PASSWORD }}
           KOSHERFLIP_KEY_ALIAS: ${{ secrets.KOSHERFLIP_KEY_ALIAS }}
           KOSHERFLIP_KEY_PASSWORD: ${{ secrets.KOSHERFLIP_KEY_PASSWORD }}
-        run: ./gradlew --no-daemon :common:test testReleaseUnitTest assembleRelease
+        run: ./gradlew --no-daemon :common:test testReleaseUnitTest lintRelease assembleRelease
 
-      - name: Collect APKs
+      - name: Collect APKs, version list, setup QR code and installers
         run: |
           mkdir -p out/apks
-          for a in KosherGuard FlipLauncher KosherBrowser KosherAI; do
+          for a in $APPS; do
             cp apps/$a/build/outputs/apk/release/$a-release.apk out/apks/$a.apk
           done
-          cp scripts/install-on-phone.sh out/apks/
+          python3 - <<'PY'
+          import json, os
+          pkgs = {"KosherGuard": "com.kosherflip.guard", "FlipLauncher": "com.kosherflip.launcher",
+                  "KosherBrowser": "com.kosherflip.browser", "KosherAI": "com.kosherflip.ai",
+                  "KosherKeys": "com.kosherflip.keys"}
+          n = int(os.environ["GITHUB_RUN_NUMBER"])
+          json.dump({p: n for p in pkgs.values()} | {"version": f"1.1.{n}"}, open("out/apks/versions.json", "w"), indent=2)
+          PY
+          pip install -q "qrcode[pil]"
+          python3 scripts/make-provisioning-qr.py --apk out/apks/KosherGuard.apk \
+            --url "https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/KosherGuard.apk" --out out/apks
+          cp scripts/install-on-phone.sh scripts/install-on-phone.bat scripts/check-phone.sh out/apks/
+          [[ "$HAS_KEY" == true ]] || echo '::warning::No KOSHERFLIP_KEYSTORE_B64 secret: built with a temporary debug key, so releases cannot update each other. See apps/signing/README.md.'
           (cd out/apks && sha256sum *.apk > SHA256SUMS)
           ls -la out/apks
 
@@ -67,7 +87,15 @@ jobs:
           path: out/apks
 
       - name: Publish release
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.publish) || (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'))
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || format('v1.1.{0}', github.run_number) }}
+          name: KosherFlip ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || format('1.1.{0}', github.run_number) }}
+          target_commitish: ${{ github.sha }}
+          make_latest: true
+          body: |
+            KosherFlip apps. Installation guide: https://github.com/${{ github.repository }}/blob/${{ github.sha }}/docs/INSTALL.md
+            - No computer: factory reset, tap the welcome screen 6 times, scan `kosherflip-setup-qr.png`.
+            - With a computer: download everything, run `install-on-phone.bat` (Windows) or `install-on-phone.sh` (Mac/Linux).
           files: out/apks/*

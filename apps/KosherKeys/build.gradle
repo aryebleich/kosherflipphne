@@ -1,0 +1,9 @@
+plugins {
+    id "com.android.application"
+}
+
+rootProject.ext.configureKosherApp(project, "com.kosherflip.keys")
+
+dependencies {
+    testImplementation "junit:junit:4.13.2"
+}

@@ -71,7 +71,9 @@ public class SmsReceiver extends BroadcastReceiver {
         if (sp.getLong(to, -1) == day) return;
         sp.edit().putLong(to, day).apply();
         try {
-            SmsManager sms = ctx.getSystemService(SmsManager.class);
+            @SuppressWarnings("deprecation")
+            SmsManager sms = android.os.Build.VERSION.SDK_INT >= 31
+                    ? ctx.getSystemService(SmsManager.class) : SmsManager.getDefault();
             if (sms != null) sms.sendTextMessage(to, null, REPLY, null, null);
         } catch (RuntimeException ignored) {
             // No SMS permission or no service.

@@ -6,6 +6,7 @@ final class BuildConfigShim {
     static final String LAUNCHER = "com.kosherflip.launcher";
     static final String AI = "com.kosherflip.ai";
     static final String BROWSER = "com.kosherflip.browser";
+    static final String KEYS = "com.kosherflip.keys";
 
     private BuildConfigShim() {}
 }

@@ -13,4 +13,4 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "kosherflip-apps"
-include ":common", ":KosherGuard", ":FlipLauncher", ":KosherAI", ":KosherBrowser"
+include ":common", ":KosherGuard", ":FlipLauncher", ":KosherAI", ":KosherBrowser", ":KosherKeys"

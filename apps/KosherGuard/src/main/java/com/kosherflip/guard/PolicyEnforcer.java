@@ -154,8 +154,9 @@ public final class PolicyEnforcer {
             Log.w(TAG, "managed config", e);
         }
 
-        // 3b. Screen filter (accessibility service).
+        // 3b. Screen filter (accessibility service) and the T9 keyboard.
         report.append(ensureScreenGuard(ctx, dpm, admin, p.screenFilter)).append('\n');
+        report.append(ensureKeyboard(ctx, p.t9Keyboard)).append('\n');
 
         // 4. Always-on DNS filter VPN.
         try {
@@ -245,6 +246,31 @@ public final class PolicyEnforcer {
         }
         if (on) android.provider.Settings.Secure.putInt(cr, android.provider.Settings.Secure.ACCESSIBILITY_ENABLED, 1);
         return on ? "Screen filter: on (every app)." : "Screen filter: off.";
+    }
+
+    /**
+     * Enables KosherKeys (English / Hebrew / Yiddish T9) and, on phones with a
+     * number keypad, makes it the default keyboard.
+     */
+    static String ensureKeyboard(Context ctx, boolean makeDefault) {
+        if (!isInstalled(ctx, BuildConfigShim.KEYS)) return "T9 keyboard: not installed.";
+        if (ctx.checkSelfPermission("android.permission.WRITE_SECURE_SETTINGS") != PackageManager.PERMISSION_GRANTED) {
+            return "T9 keyboard: choose it in Settings > Keyboard.";
+        }
+        String ime = BuildConfigShim.KEYS + "/.T9Service";
+        android.content.ContentResolver cr = ctx.getContentResolver();
+        String cur = android.provider.Settings.Secure.getString(cr, android.provider.Settings.Secure.ENABLED_INPUT_METHODS);
+        if (cur == null || !cur.contains(ime)) {
+            android.provider.Settings.Secure.putString(cr, android.provider.Settings.Secure.ENABLED_INPUT_METHODS,
+                    cur == null || cur.isEmpty() ? ime : cur + ":" + ime);
+        }
+        boolean keypad = ctx.getResources().getConfiguration().keyboard
+                == android.content.res.Configuration.KEYBOARD_12KEY;
+        if (makeDefault && keypad) {
+            android.provider.Settings.Secure.putString(cr, android.provider.Settings.Secure.DEFAULT_INPUT_METHOD, ime);
+            return "T9 keyboard: default.";
+        }
+        return "T9 keyboard: available.";
     }
 
     /** Removes all restrictions and gives up device ownership (admin "uninstall"). */

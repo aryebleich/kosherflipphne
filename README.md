@@ -48,15 +48,22 @@ downloads**, a filter that checks **everything on the screen**, and a free AI as
 - Video blocked by default; camera on/off; hotspot block; no sideloading (USB, Bluetooth, SD card).
 - Only approved apps; no app store unless the admin opens installs; factory reset & safe mode blocked.
 - Keypad-first: home with Hebrew date and zmanim, T9 dialing, numbered app list, keypad pointer in the browser.
+- **KosherKeys T9 keyboard**: English, Hebrew and Yiddish (װ ױ ײ אַ אָ פּ פֿ) multi-tap typing.
+- **Install & update without a computer**: setup QR code; KosherGuard installs and updates the other apps.
 - **Free AI** ("Ask AI"): Google Gemini free key, strictest Google safety settings + our modest prompt +
   our word filter on questions and answers. Other free OpenAI-compatible services or Claude also supported.
+
+## Install
+
+👉 **[Installation guide](docs/INSTALL.md)**: QR code (no computer), Windows/Mac/Linux installer,
+phone notes (CAT S22 Flip, Pom, other flip phones) and carrier notes.
 
 ## Two ways to install
 
 | | **A. Apps only** (easiest) | **B. Full ROM** |
 |---|---|---|
 | What | Install the 3 apps on a phone's existing Android | Replace the phone's system with the KosherFlip Android 16 image |
-| Phone needs | Android 9+ flip phone, USB debugging | arm64 **Treble** phone with an **unlockable bootloader** |
+| Phone needs | Android 8+ phone; QR code or USB debugging | arm64 **Treble** phone with an **unlockable bootloader** |
 | Android version | whatever the phone has | **Android 16** |
 | Filter strength | strong (device owner) | strongest (built into the system, browser removed, self-provisions at first boot) |
 | Effort | 5 minutes with a computer | build the image (big Linux machine) + flash |
@@ -91,19 +98,22 @@ See [docs/BUILDING.md](docs/BUILDING.md) and [docs/DEVICES.md](docs/DEVICES.md).
 ## Repository layout
 
 ```
-apps/                     Gradle project (Java, no AndroidX – small and fast)
+apps/                     Gradle project (Java, no AndroidX – small and fast; Android 8+)
   common/                 shared word filter + zmanim (pure Java, unit tested)
   KosherGuard/            filter: device owner, DNS VPN, screen filter, profiles, requests, admin console
   FlipLauncher/           keypad home screen + app list
   KosherBrowser/          filtered browser with keypad pointer
   KosherAI/               AI assistant (Gemini free / OpenAI-compatible / Claude)
+  KosherKeys/             T9 keyboard: English, Hebrew, Yiddish
 rom/
   vendor/kosher/          AOSP vendor tree: product kosher_gsi_arm64, app imports, permissions, policy
   local_manifests/        optional Google apps (MindTheGapps, Android 16 "baklava")
   build-rom.sh            sync AOSP + build + package the GSI
   Dockerfile              reproducible build environment
 scripts/
-  install-on-phone.sh     path A: apps + device owner via adb
+  install-on-phone.sh/.bat  apps + device owner via adb (Mac/Linux / Windows)
+  check-phone.sh          compatibility report for a connected phone
+  make-provisioning-qr.py setup QR code (no-computer install)
   flash-gsi.sh            path B: flash the GSI with fastboot
 docs/                     architecture, filter/admin guide, building, devices
 .github/workflows/        CI: build + test apps on every push; ROM build on a self-hosted runner

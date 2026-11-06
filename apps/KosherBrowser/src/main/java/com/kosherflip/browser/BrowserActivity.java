@@ -69,6 +69,7 @@ public class BrowserActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        SystemBars.pad(this);
         cfg = BrowserConfig.load(this);
 
         LinearLayout root = new LinearLayout(this);

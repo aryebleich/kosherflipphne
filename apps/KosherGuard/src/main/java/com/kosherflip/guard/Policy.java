@@ -58,6 +58,10 @@ public final class Policy {
     public int candleMinutes = 18;
     public int endMinutes = 50;
     public Set<String> allowedDownloadTypes = new LinkedHashSet<>();
+    /** Make KosherKeys the default keyboard on keypad phones. */
+    public boolean t9Keyboard = true;
+    /** Where "Install / update apps" downloads from (blank = this project's GitHub releases). */
+    public String updateUrl = "";
 
     /** AI assistant: provider gemini (free key) | openai (any OpenAI-compatible, e.g. free Groq/OpenRouter models) | claude. */
     public String aiProvider = "gemini";
@@ -147,6 +151,8 @@ public final class Policy {
         p.inIsrael = o.optBoolean("inIsrael", false);
         p.candleMinutes = o.optInt("candleMinutes", 18);
         p.endMinutes = o.optInt("endMinutes", 50);
+        p.t9Keyboard = o.optBoolean("t9Keyboard", true);
+        p.updateUrl = o.optString("updateUrl", "");
         readList(o.optJSONArray("blockedCategories"), p.blockedCategories);
         readList(o.optJSONArray("trustedCategories"), p.trustedCategories);
         readList(o.optJSONArray("customWords"), p.customWords);
@@ -195,6 +201,8 @@ public final class Policy {
             o.put("inIsrael", inIsrael);
             o.put("candleMinutes", candleMinutes);
             o.put("endMinutes", endMinutes);
+            o.put("t9Keyboard", t9Keyboard);
+            o.put("updateUrl", updateUrl);
             o.put("blockedCategories", new JSONArray(blockedCategories));
             o.put("trustedCategories", new JSONArray(trustedCategories));
             o.put("customWords", new JSONArray(customWords));

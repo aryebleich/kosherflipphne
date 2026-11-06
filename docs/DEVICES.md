@@ -1,8 +1,11 @@
 # Choosing a flip phone / porting
 
-## Path A (apps only) works on
+See also the phone-specific notes in [INSTALL.md](INSTALL.md) (CAT S22 Flip, Pom).
+Run `scripts/check-phone.sh` with the phone connected for an automatic report.
 
-Any Android 9+ phone, flip or not, as long as you can turn on USB debugging and
+## Apps-only install works on
+
+Any Android 8+ phone, flip or not, as long as you can turn on USB debugging and
 factory reset it. This is how most existing Android flip phones can become a
 KosherFlip phone today.
 

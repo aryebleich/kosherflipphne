@@ -37,6 +37,7 @@ public class AppsActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        SystemBars.pad(this);
         list = new ListView(this);
         list.setBackgroundColor(Color.BLACK);
         list.setAdapter(new Adapter());

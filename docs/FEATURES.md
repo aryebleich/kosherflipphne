@@ -15,10 +15,11 @@ pages, Nov 2026) and how KosherFlip covers it.
 | Budget app (Mind) | Allow any budgeting app from the list (or request one) |
 | Curated music player (Fig) | Allow a kosher music app; MP3 downloads allowed in the browser |
 | Voice messaging, conference calls (Pom) | Provided by the phone's dialer/messaging apps |
-| Yiddish T9 keyboard, voice-to-text (Pom) | *Not yet* – planned (see Roadmap) |
+| Yiddish T9 keyboard (Pom) | **KosherKeys**: English / Hebrew / Yiddish multi-tap T9, default on keypad phones |
+| Voice-to-text (Pom) | The phone's own voice typing (Google) keeps working if allowed |
 | Kosher smartphone: useful apps work, distracting content removed (Wonder, filtered smartphones) | Profiles + categories + screen filter + filtered browser |
 | Filtered web with whitelist & categories (filter providers) | Standard / strict modes, 14 categories, always-allowed and blocked lists, requests & approvals |
-| Software updates through Settings (Mind) | Apps update via the admin (installs window); ROM updates: reflash – OTA planned |
+| Software updates through Settings (Mind) | KosherGuard → *Install / update KosherFlip apps* (from GitHub releases); ROM: reflash |
 
 **Extra in KosherFlip**
 
@@ -31,7 +32,7 @@ pages, Nov 2026) and how KosherFlip covers it.
 
 ## Roadmap
 
-- Yiddish / Hebrew T9 input method for keypad phones.
+- Predictive (dictionary) T9 for Hebrew/Yiddish.
 - On-device image classifier for the browser and screen filter.
 - Remote admin (approve requests from the supervisor's phone).
 - Over-the-air ROM updates.

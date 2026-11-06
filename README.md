@@ -49,14 +49,17 @@ downloads**, a filter that checks **everything on the screen**, and a free AI as
 - Only approved apps; no app store unless the admin opens installs; factory reset & safe mode blocked.
 - Keypad-first: home with Hebrew date and zmanim, T9 dialing, numbered app list, keypad pointer in the browser.
 - **KosherKeys T9 keyboard**: English, Hebrew and Yiddish (װ ױ ײ אַ אָ פּ פֿ) multi-tap typing.
-- **Install & update without a computer**: setup QR code; KosherGuard installs and updates the other apps.
+- **Install without a computer or QR code**: download KosherGuard on the phone (or receive it by
+  Bluetooth / Nearby Share), follow the checklist; KosherGuard installs and updates the other apps.
 - **Free AI** ("Ask AI"): Google Gemini free key, strictest Google safety settings + our modest prompt +
   our word filter on questions and answers. Other free OpenAI-compatible services or Claude also supported.
 
 ## Install
 
-👉 **[Installation guide](docs/INSTALL.md)**: QR code (no computer), Windows/Mac/Linux installer,
-phone notes (CAT S22 Flip, Pom, other flip phones) and carrier notes.
+👉 **[Installation guide](docs/INSTALL.md)**. Easiest: **on the phone alone** – open
+*aryebleich.github.io/kosherflipphne* in the phone's browser (or receive it from another KosherFlip phone
+by Bluetooth), install KosherGuard and follow its checklist. Also: QR code, Windows/Mac/Linux installer,
+phone notes (CAT S22 Flip, Pom) and carrier notes.
 
 ## Two ways to install
 

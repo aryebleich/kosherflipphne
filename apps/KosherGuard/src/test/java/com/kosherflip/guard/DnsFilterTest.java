@@ -198,4 +198,16 @@ public class DnsFilterTest {
         c.put("a.com/1/1", m);
         assertNotNull(c.get("a.com/1/1"));
     }
+
+    @Test
+    public void tamperRules() {
+        assertTrue(TamperRules.isProtectedScreen("App info KosherGuard Uninstall Force stop"));
+        assertTrue(TamperRules.isProtectedScreen("Use KosherGuard screen filter"));
+        assertTrue(TamperRules.isProtectedScreen("Reset options Erase all data (factory reset)"));
+        assertTrue(TamperRules.isProtectedScreen("Debugging USB debugging"));
+        assertTrue(TamperRules.isProtectedScreen("Reboot to safe mode? OK Cancel"));
+        assertFalse(TamperRules.isProtectedScreen("Apps: Calculator Camera KosherGuard Maps"));
+        assertFalse(TamperRules.isProtectedScreen("Wi-Fi Network & internet Bluetooth Display"));
+        assertFalse(TamperRules.isProtectedScreen("Camera Uninstall Force stop"));
+    }
 }

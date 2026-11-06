@@ -27,8 +27,11 @@ final class BrowserConfig {
 
     static BrowserConfig load(Context ctx) {
         BrowserConfig c = new BrowserConfig();
-        RestrictionsManager rm = ctx.getSystemService(RestrictionsManager.class);
-        Bundle b = rm == null ? null : rm.getApplicationRestrictions();
+        Bundle b = fromGuard(ctx);
+        if (b == null) {
+            RestrictionsManager rm = ctx.getSystemService(RestrictionsManager.class);
+            b = rm == null ? null : rm.getApplicationRestrictions();
+        }
         if (b == null || !b.getBoolean("managed", false)) return c;
         c.imageMode = b.getString("image_mode", c.imageMode);
         c.blockVideo = b.getBoolean("block_video", true);
@@ -39,6 +42,16 @@ final class BrowserConfig {
         if (!trusted.isEmpty()) c.trustedSites = trusted;
         c.words = WordFilter.standard(lines(b.getString("custom_words")));
         return c;
+    }
+
+    /** Settings from KosherGuard (works with and without device owner). */
+    static Bundle fromGuard(Context ctx) {
+        try {
+            return ctx.getContentResolver().call(android.net.Uri.parse("content://com.kosherflip.guard.config"),
+                    "config", null, null);
+        } catch (RuntimeException e) {
+            return null; // KosherGuard not installed
+        }
     }
 
     boolean imagesAllowedOn(String host) {

@@ -67,8 +67,16 @@ public final class PolicyEnforcer {
         DevicePolicyManager dpm = ctx.getSystemService(DevicePolicyManager.class);
         ComponentName admin = admin(ctx);
         if (dpm == null || !dpm.isDeviceOwnerApp(ctx.getPackageName())) {
-            report.append("NOT device owner - filter cannot be enforced.\n");
+            // Standard protection (installed on the phone alone, no QR code or computer):
+            // the screen guard blocks apps and tampering, the VPN filters websites.
+            report.append("Standard protection (phone-only install).\n");
+            report.append(Standard.status(ctx)).append('\n');
+            if (dpm != null) {
+                report.append(ensureScreenGuard(ctx, dpm, admin, p.screenFilter)).append('\n');
+                report.append(ensureKeyboard(ctx, p.t9Keyboard)).append('\n');
+            }
             startVpn(ctx);
+            PolicyJob.schedule(ctx);
             return report.toString();
         }
 
@@ -110,12 +118,7 @@ public final class PolicyEnforcer {
         boolean shabbos = isShabbosNow(p);
         int hidden = 0, shown = 0;
         for (String pkg : launcherPackages(ctx)) {
-            boolean allow;
-            if (shabbos) allow = SHABBOS_APPS.contains(pkg);
-            else if (BuildConfigShim.AI.equals(pkg)) allow = p.aiEnabled;
-            else if (BuildConfigShim.BROWSER.equals(pkg)) allow = p.browserEnabled;
-            else if (p.talkOnly && MESSAGING.contains(pkg)) allow = false;
-            else allow = CORE.contains(pkg) || p.allowedApps.contains(pkg);
+            boolean allow = isAppAllowed(p, shabbos, pkg);
             try {
                 boolean wasHidden = dpm.isApplicationHidden(admin, pkg);
                 if (allow == wasHidden) {
@@ -130,23 +133,10 @@ public final class PolicyEnforcer {
         if (shabbos) report.append("Shabbos mode is ON now.\n");
         if (p.talkOnly) report.append("Talk-only mode: texts are auto-answered.\n");
 
-        // 3. Settings for KosherAI and KosherBrowser through managed configuration.
-        String words = joinLines(p.customWords);
-        Bundle ai = new Bundle();
-        ai.putBoolean("managed", true);
-        ai.putString("provider", p.aiProvider);
-        ai.putString("model", p.aiModel);
-        ai.putString("base_url", p.aiBaseUrl);
-        ai.putString("api_key", p.aiApiKey == null ? "" : p.aiApiKey);
-        ai.putString("custom_words", words);
-        Bundle br = new Bundle();
-        br.putBoolean("managed", true);
-        br.putString("image_mode", p.imageMode);
-        br.putBoolean("block_video", p.blockVideo);
-        br.putBoolean("allow_apk", p.allowAppInstalls);
-        br.putString("download_types", joinLines(p.allowedDownloadTypes));
-        br.putString("trusted_sites", joinLines(trustedSites(ctx, p)));
-        br.putString("custom_words", words);
+        // 3. Settings for KosherAI and KosherBrowser through managed configuration
+        //    (also served to them by ConfigProvider, which works without device owner).
+        Bundle ai = aiConfig(p);
+        Bundle br = browserConfig(ctx, p);
         try {
             dpm.setApplicationRestrictions(admin, BuildConfigShim.AI, ai);
             dpm.setApplicationRestrictions(admin, BuildConfigShim.BROWSER, br);
@@ -181,6 +171,39 @@ public final class PolicyEnforcer {
         }
         PolicyJob.schedule(ctx);
         return report.toString();
+    }
+
+    /** Is this launcher app allowed right now? Used to hide apps (owner) or block them (standard). */
+    static boolean isAppAllowed(Policy p, boolean shabbos, String pkg) {
+        if (BuildConfigShim.GUARD.equals(pkg) || BuildConfigShim.LAUNCHER.equals(pkg)) return true;
+        if (shabbos) return SHABBOS_APPS.contains(pkg);
+        if (BuildConfigShim.AI.equals(pkg)) return p.aiEnabled;
+        if (BuildConfigShim.BROWSER.equals(pkg)) return p.browserEnabled;
+        if (p.talkOnly && MESSAGING.contains(pkg)) return false;
+        return CORE.contains(pkg) || p.allowedApps.contains(pkg);
+    }
+
+    static Bundle aiConfig(Policy p) {
+        Bundle ai = new Bundle();
+        ai.putBoolean("managed", true);
+        ai.putString("provider", p.aiProvider);
+        ai.putString("model", p.aiModel);
+        ai.putString("base_url", p.aiBaseUrl);
+        ai.putString("api_key", p.aiApiKey == null ? "" : p.aiApiKey);
+        ai.putString("custom_words", joinLines(p.customWords));
+        return ai;
+    }
+
+    static Bundle browserConfig(Context ctx, Policy p) {
+        Bundle br = new Bundle();
+        br.putBoolean("managed", true);
+        br.putString("image_mode", p.imageMode);
+        br.putBoolean("block_video", p.blockVideo);
+        br.putBoolean("allow_apk", p.allowAppInstalls);
+        br.putString("download_types", joinLines(p.allowedDownloadTypes));
+        br.putString("trusted_sites", joinLines(trustedSites(ctx, p)));
+        br.putString("custom_words", joinLines(p.customWords));
+        return br;
     }
 
     static boolean isShabbosNow(Policy p) {
@@ -277,7 +300,15 @@ public final class PolicyEnforcer {
     public static void release(Context ctx) {
         DevicePolicyManager dpm = ctx.getSystemService(DevicePolicyManager.class);
         ComponentName admin = admin(ctx);
-        if (dpm == null || !dpm.isDeviceOwnerApp(ctx.getPackageName())) return;
+        if (dpm == null) return;
+        if (!dpm.isDeviceOwnerApp(ctx.getPackageName())) {
+            // Standard protection: drop removal protection and pause the guard so the
+            // apps can be switched off and uninstalled in Settings.
+            if (dpm.isAdminActive(admin)) dpm.removeActiveAdmin(admin);
+            Standard.setSetupDone(ctx, false);
+            Maintenance.start(ctx, 60);
+            return;
+        }
         for (String pkg : launcherPackagesIncludingHidden(ctx)) {
             try { dpm.setApplicationHidden(admin, pkg, false); } catch (Exception ignored) { }
         }

@@ -31,7 +31,14 @@ public class AdminActivity extends Activity {
         super.onCreate(savedInstanceState);
         SystemBars.pad(this);
         SetupActivity.disableSelfIfNotRom(this);
-        if (PolicyEnforcer.isDeviceOwner(this)) applyQuietly(); // self-heal whenever the console opens
+        if (PolicyEnforcer.isDeviceOwner(this)) {
+            applyQuietly(); // self-heal whenever the console opens
+        } else if (!Standard.setupDone(this)) {
+            // Installed on the phone alone: run the phone-only setup checklist.
+            startActivity(new Intent(this, SetupWizardActivity.class));
+            finish();
+            return;
+        }
         if (!Pin.isSet(this)) showCreatePin();
         else showUnlock();
     }
@@ -96,6 +103,7 @@ public class AdminActivity extends Activity {
                 toast("Too many attempts. Try again in " + wait + "s");
             } else if (Pin.check(this, pin.getText().toString())) {
                 unlocked = true;
+                Maintenance.start(this, 10); // Settings are unlocked for 10 minutes
                 showMenu();
             } else {
                 pin.setText("");
@@ -149,6 +157,17 @@ public class AdminActivity extends Activity {
         item("Shabbos mode: " + p.shabbosMode, this::editShabbos);
         item("AI assistant: " + (p.aiEnabled ? p.aiProvider : "off"), this::editAi);
         item("Install / update KosherFlip apps", this::updateApps);
+        item("Share KosherFlip with another phone", () -> startActivity(ShareProvider.shareIntent(this)));
+        if (!PolicyEnforcer.isDeviceOwner(this)) {
+            item("Phone setup checklist (" + Standard.status(this) + ")", () -> {
+                Standard.setSetupDone(this, false);
+                startActivity(new Intent(this, SetupWizardActivity.class));
+            });
+            item("Settings unlocked for 10 minutes", () -> {
+                Maintenance.start(this, 10);
+                toast("Settings unlocked for 10 minutes");
+            });
+        }
         item("T9 keyboard (English/Hebrew/Yiddish) as default: " + onOff(p.t9Keyboard),
                 () -> toggle(q -> q.t9Keyboard = !q.t9Keyboard));
         item("App installs: " + (p.allowAppInstalls ? "ALLOWED" : "blocked"), this::toggleInstalls);

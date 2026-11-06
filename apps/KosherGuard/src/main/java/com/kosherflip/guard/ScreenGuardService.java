@@ -33,6 +33,10 @@ public class ScreenGuardService extends AccessibilityService {
     private final Set<String> exempt = new HashSet<>();
     private volatile WordFilter filter;
     private volatile boolean enabled = true;
+    /** Standard protection (not device owner): also block apps and tampering. */
+    private volatile boolean standard;
+    private volatile Policy policy;
+    private volatile Set<String> launcherApps = new HashSet<>();
     private long policyLoadedAt;
     private String pendingPackage;
     private TextView overlay;
@@ -52,7 +56,10 @@ public class ScreenGuardService extends AccessibilityService {
 
     private void reload() {
         Policy p = Policy.load(this);
-        enabled = p.screenFilter;
+        policy = p;
+        standard = !PolicyEnforcer.isDeviceOwner(this);
+        launcherApps = new HashSet<>(PolicyEnforcer.launcherPackages(this));
+        enabled = p.screenFilter || standard; // in standard mode the guard is the enforcement
         filter = WordFilter.standard(p.customWords);
         policyLoadedAt = SystemClock.elapsedRealtime();
     }
@@ -65,6 +72,20 @@ public class ScreenGuardService extends AccessibilityService {
         if (pkg == null) return;
         String p = pkg.toString();
         if (exempt.contains(p) || p.contains("inputmethod") || p.contains("keyboard")) return;
+
+        if (standard && event.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
+                && !Maintenance.active(this)) {
+            Policy pol = policy;
+            if (TamperRules.INSTALLERS.contains(p) && !pol.allowAppInstalls) {
+                block(p, "Installing and removing apps is locked by KosherGuard", true);
+                return;
+            }
+            if (launcherApps.contains(p) && !TamperRules.SYSTEM_SCREENS.contains(p)
+                    && !PolicyEnforcer.isAppAllowed(pol, PolicyEnforcer.isShabbosNow(pol), p)) {
+                block(p, "This app is not allowed on this phone", true);
+                return;
+            }
+        }
 
         if (event.getEventType() == AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED) {
             StringBuilder sb = new StringBuilder();
@@ -86,8 +107,15 @@ public class ScreenGuardService extends AccessibilityService {
         if (root == null) return;
         StringBuilder sb = new StringBuilder();
         collect(root, sb, new int[] {0});
+        String pkg = pendingPackage;
+        if (standard && pkg != null && TamperRules.SYSTEM_SCREENS.contains(pkg) && !Maintenance.active(this)
+                && TamperRules.isProtectedScreen(sb.toString())) {
+            block(pkg, "This setting is locked by KosherGuard.\nThe admin can unlock it with the PIN.", false);
+            return;
+        }
+        if (!policy.screenFilter && standard) return;
         WordFilter.Result r = filter.check(sb);
-        if (r.blocked) block(pendingPackage, r.reason);
+        if (r.blocked) block(pkg, "This content was blocked by KosherGuard", false);
     }
 
     private static void collect(AccessibilityNodeInfo n, StringBuilder sb, int[] count) {
@@ -101,17 +129,17 @@ public class ScreenGuardService extends AccessibilityService {
         for (int i = 0; i < n.getChildCount(); i++) collect(n.getChild(i), sb, count);
     }
 
-    private void block(String pkg, String reason) {
+    private void block(String pkg, String message, boolean goHome) {
         long now = SystemClock.elapsedRealtime();
         recentBlocks = now - lastBlockAt < 10_000 ? recentBlocks + 1 : 1;
         lastBlockAt = now;
         Stats.recordBlockedScreen(this, pkg);
-        showOverlay();
+        showOverlay(message);
         // Leave the page; if the app keeps showing it, leave the app.
-        performGlobalAction(recentBlocks >= 3 ? GLOBAL_ACTION_HOME : GLOBAL_ACTION_BACK);
+        performGlobalAction(goHome || recentBlocks >= 3 ? GLOBAL_ACTION_HOME : GLOBAL_ACTION_BACK);
     }
 
-    private void showOverlay() {
+    private void showOverlay(String message) {
         WindowManager wm = getSystemService(WindowManager.class);
         if (wm == null) return;
         if (overlay == null) {
@@ -133,6 +161,7 @@ public class ScreenGuardService extends AccessibilityService {
                 return;
             }
         }
+        overlay.setText("\u26D4\n" + message);
         handler.removeCallbacks(hideOverlay);
         handler.postDelayed(hideOverlay, 1800);
     }

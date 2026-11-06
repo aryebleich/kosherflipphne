@@ -98,8 +98,17 @@ public class ChatActivity extends Activity {
      * unmanaged, a free Gemini key entered here. Null if not set up.
      */
     private Bundle resolveConfig() {
-        RestrictionsManager rm = getSystemService(RestrictionsManager.class);
-        Bundle r = rm != null ? rm.getApplicationRestrictions() : null;
+        Bundle r = null;
+        try {
+            r = getContentResolver().call(android.net.Uri.parse("content://com.kosherflip.guard.config"),
+                    "config", null, null);
+        } catch (RuntimeException ignored) {
+            // KosherGuard not installed
+        }
+        if (r == null) {
+            RestrictionsManager rm = getSystemService(RestrictionsManager.class);
+            r = rm != null ? rm.getApplicationRestrictions() : null;
+        }
         if (r != null && r.getBoolean("managed", false)) {
             String k = r.getString("api_key", "");
             boolean needsKey = !"openai".equals(r.getString("provider", "gemini"));

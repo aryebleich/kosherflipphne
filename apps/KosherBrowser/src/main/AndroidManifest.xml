@@ -5,10 +5,14 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <queries>
+        <package android:name="com.kosherflip.guard" />
+    </queries>
+
     <application
         android:allowBackup="false"
         android:icon="@android:drawable/ic_menu_compass"
-        android:label="Browser"
+        android:label="Kosher Browser"
         android:supportsRtl="true"
         android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
 

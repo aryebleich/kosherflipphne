@@ -3,6 +3,10 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <queries>
+        <package android:name="com.kosherflip.guard" />
+    </queries>
+
     <application
         android:allowBackup="false"
         android:icon="@android:drawable/ic_dialog_info"

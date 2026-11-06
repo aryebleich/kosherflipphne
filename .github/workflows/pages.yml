@@ -1,0 +1,36 @@
+name: Download page
+
+# Publishes site/ as the short download page (https://<owner>.github.io/<repo>/)
+# that a phone's browser can open. One-time: GitHub -> Settings -> Pages ->
+# Source: "GitHub Actions".
+on:
+  push:
+    branches: [main, master]
+    paths: ["site/**", ".github/workflows/pages.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Point the page at this repository's releases
+        run: sed -i "s#aryebleich/kosherflipphne#${GITHUB_REPOSITORY}#g" site/index.html
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deploy
+        uses: actions/deploy-pages@v4

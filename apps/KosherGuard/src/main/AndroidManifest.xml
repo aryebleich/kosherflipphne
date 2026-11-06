@@ -81,6 +81,23 @@
             </intent-filter>
         </receiver>
 
+        <!-- Phone-only setup (no QR code, no computer) -->
+        <activity
+            android:name=".SetupWizardActivity"
+            android:exported="false"
+            android:label="KosherFlip setup" />
+
+        <provider
+            android:name=".ConfigProvider"
+            android:authorities="com.kosherflip.guard.config"
+            android:exported="true" />
+
+        <provider
+            android:name=".ShareProvider"
+            android:authorities="com.kosherflip.guard.share"
+            android:exported="false"
+            android:grantUriPermissions="true" />
+
         <!-- QR-code / zero-touch provisioning (Android 10+) -->
         <activity
             android:name=".ProvisioningActivities$Mode"

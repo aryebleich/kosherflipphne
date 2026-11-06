@@ -4,6 +4,10 @@
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
+    <queries>
+        <package android:name="com.kosherflip.guard" />
+    </queries>
+
     <application
         android:allowBackup="false"
         android:icon="@android:drawable/sym_def_app_icon"

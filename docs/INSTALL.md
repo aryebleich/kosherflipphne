@@ -3,18 +3,79 @@
 This guide turns an Android flip phone (or any Android phone) into a filtered
 KosherFlip phone. Pick **one** method:
 
-| Method | You need | Best for |
+| Method | You need | Protection |
 |---|---|---|
-| **A. QR code** – no computer | Wi-Fi, a second screen to show the QR code | Most phones with Android 10+ and Google services (e.g. CAT S22 Flip) |
-| **B. Computer + USB cable** | Windows, Mac or Linux computer | Every Android 8+ phone; use it if Method A doesn't start |
-| **C. Full Android 16 system (ROM)** | Unlockable 64-bit phone, Linux build machine | Advanced users only |
+| **⭐ Phone only** – easiest | Just the phone (internet, or the files from another KosherFlip phone) | **Standard** |
+| **A. QR code** | Wi-Fi, a second screen to show the QR code, a factory reset | **Full** |
+| **B. Computer + USB cable** | Windows, Mac or Linux computer, a factory reset | **Full** |
+| **C. Full Android 16 system (ROM)** | Unlockable 64-bit phone, Linux build machine | **Full** |
 
-Methods A and B keep the phone's own system (firmware), so **calls, texts,
+All methods except C keep the phone's own system (firmware), so **calls, texts,
 VoLTE, Wi-Fi calling and emergency calls keep working on every carrier** exactly
-as before. KosherFlip only adds the filter and the apps. This is the recommended way.
+as before. KosherFlip only adds the filter and the apps.
+
+**Standard vs Full protection**
+
+| | Standard (phone only) | Full (QR / computer / ROM) |
+|---|---|---|
+| Website filter, screen filter, browser, AI, T9, talk-only, Shabbos mode | ✔ | ✔ |
+| Unapproved apps | blocked when opened | hidden completely |
+| Turning the filter off / uninstalling | blocked (the Settings screens are locked without the PIN) | impossible without the PIN |
+| Factory reset, safe mode, USB debugging | Settings screens locked; **a determined user can still get around it with the phone's hardware buttons (safe mode / recovery)** | blocked by Android itself |
+| Factory reset needed to install | no | yes |
+
+You can start with **Phone only** and upgrade to Full protection later (Method A or B).
 
 > ⚠️ Methods A and B start with a **factory reset**, which erases the phone.
 > Save contacts and photos first (copy contacts to the SIM card or to a Google account).
+
+---
+
+## ⭐ Phone only – no computer, no QR code, no reset
+
+### 1. Get KosherGuard onto the phone (one of these)
+
+- **With internet**: in the phone's browser open the download page
+  **aryebleich.github.io/kosherflipphne** and press *Download KosherGuard*.
+  (Or the direct link: `github.com/aryebleich/kosherflipphne/releases/latest/download/KosherGuard.apk`.)
+- **Without internet**: on a phone that already has KosherFlip, open KosherGuard → enter the PIN →
+  **Share KosherFlip with another phone**, and send the files by Bluetooth or Nearby Share.
+  On the new phone accept the files.
+
+### 2. Install it
+
+Open the downloaded `KosherGuard.apk` (from the notification, or the *Files / Downloads* app).
+If Android asks, allow the browser (or Files / Bluetooth) to **install unknown apps**, press Back,
+and open the file again. Press **Install**, then **Open**.
+
+### 3. Follow the checklist
+
+KosherGuard opens the **KosherFlip setup** checklist. Do the steps in order. Each one opens the right
+screen; press Back to return and the step gets a ✔:
+
+1. **Admin PIN**: choose a PIN (4+ digits) for the supervisor.
+2. **Profile**: Kosher / Heimish / Open.
+3. **Allow KosherGuard to install the KosherFlip apps**: turn on *Allow from this source*, press Back.
+4. **Install the KosherFlip apps**: press *Install* for each app (launcher, browser, AI, keyboard).
+   No internet? Open the other APK files you received in the Files app instead.
+5. **Turn on the website filter**: press *OK* on Android's connection request.
+6. **Turn on the screen filter**: *Accessibility → KosherGuard screen filter → On → Allow*.
+   On Android 13+ it may be greyed out the first time: open *Settings → Apps → KosherGuard →
+   ⋮ (top right) → Allow restricted settings*, then turn it on.
+7. **Protect KosherGuard from removal**: press *Activate*.
+8. **Home screen**: choose *Flip Home* (and *Always*).
+9. **T9 keyboard** (keypad phones): turn on *KosherKeys*, then choose it.
+10. **Always-on filter**: press the ⚙ next to KosherGuard → turn on *Always-on VPN* and
+    *Block connections without VPN*, press Back, then *I did it*.
+11. **Finish – lock the phone**.
+
+While the checklist is open, the Settings lock is paused. After *Finish*, the Settings screens that
+could switch off or remove KosherFlip are locked. The admin can unlock them for 10 minutes by
+entering the PIN in KosherGuard.
+
+Then continue with **First setup in KosherGuard** below (AI key, Google account, Shabbos mode).
+
+> Tip for keypad-only phones: in Android's own Settings screens use the D-pad and OK.
 
 ---
 
@@ -108,8 +169,9 @@ Then open KosherGuard → *Apply now*.
 4. **Google account** (optional): add it now in *Settings → Accounts* for Gmail, Maps and Play services.
 5. **Shabbos mode** (optional): *Shabbos mode* → *Use the phone's location* → *Save* → mode *auto*.
 6. **Talk-only** (optional): for a phone without texting.
-7. **Last step: USB debugging lock → ON.** From now on nobody can remove the filter with a computer.
-   (Turn it off in KosherGuard before you update with a computer.)
+7. **Last step (Full protection): USB debugging lock → ON.** From now on nobody can remove the filter
+   with a computer. (Turn it off in KosherGuard before you update with a computer.) With Standard
+   protection the USB-debugging screen is locked by the screen guard instead.
 
 The phone is ready. Press **OK** on the home screen for the app list, the number keys to dial,
 → for the AI assistant.
@@ -121,8 +183,8 @@ The phone is ready. Press **OK** on the home screen for the app list, the number
 ### CAT S22 Flip
 - Android 11 (Go edition), Snapdragon 215, 2 GB RAM, 2.8" touch screen + keypad.
   Sold unlocked and by US carriers (T-Mobile, Verizon and others).
-- **Use Method B** (works on every S22). Method A may also work (Android 11 Go with Google
-  setup); if 6 taps do nothing, use B.
+- **Phone only** works (Android 11: the screen filter switch is not greyed out). For Full protection use
+  Method B; Method A may also work (if 6 taps do nothing, use B).
 - Developer options: *Settings → About phone → Build number* ×7; USB debugging in
   *Settings → System → Advanced → Developer options*.
 - KosherKeys becomes the default keyboard because the S22 has a number keypad
@@ -140,6 +202,7 @@ The phone is ready. Press **OK** on the home screen for the app list, the number
   it is built in and only Pom/its seller can unlock the phone. That is by design.
 - Replacing or adding software on a certified phone **ends that certification**. Ask your rav
   or the certifying organisation before changing a certified phone.
+- Phone only: works only if the Pom lets you install apps from a file (most pre-filtered phones block this).
 - If the phone allows it, use **Method B** (Pom models run Android 11; the ROM is not recommended).
   KosherKeys gives the same Yiddish T9 typing the Pom is known for.
 
@@ -195,6 +258,10 @@ apps in Settings, or factory reset.
 | An app is missing | App list → *Request an app…*; admin approves in *Requests*, or ticks it in *Allowed apps* |
 | AI says the key is invalid | Re-create the free key at aistudio.google.com and paste it again |
 | Forgot the admin PIN | Factory reset the phone and install again (by design there is no back door) |
+| Phone only: "App not installed" / "blocked by Play Protect" | Press *More details → Install anyway*; make sure there is free storage |
+| Phone only: the browser can't download `.apk` files | Use another browser, or get the files from another KosherFlip phone (Share) |
+| Phone only: screen filter switch is greyed out | Settings → Apps → KosherGuard → ⋮ → *Allow restricted settings* (Android 13+) |
+| Phone only: a Settings screen is locked when I need it | KosherGuard → PIN → *Settings unlocked for 10 minutes* |
 
 ## Method C – full Android 16 system (ROM)
 
@@ -203,7 +270,14 @@ see [BUILDING.md](BUILDING.md) to build the image and `scripts/flash-gsi.sh` to 
 phone's original firmware so you can go back. The ROM includes all KosherFlip apps and sets itself up
 on first boot.
 
-## Publishing a release (for the project owner)
+## Publishing a release and the download page (for the project owner)
+
+The download page (`site/index.html`) is published by the *Download page* workflow to
+`https://aryebleich.github.io/kosherflipphne/`. One-time: GitHub → **Settings → Pages → Source:
+GitHub Actions**, then run *Actions → Download page → Run workflow* (it also runs on every push to
+`main`). For an even shorter address, point a short link (for example a URL shortener) at that page.
+
+### Releases
 
 Phones (QR code and *Install / update apps*) download from the repository's **latest release**.
 **First, once:** create the release signing key and add it as GitHub secrets

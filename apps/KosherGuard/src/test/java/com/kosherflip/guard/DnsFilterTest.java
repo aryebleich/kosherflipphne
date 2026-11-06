@@ -210,4 +210,31 @@ public class DnsFilterTest {
         assertFalse(TamperRules.isProtectedScreen("Wi-Fi Network & internet Bluetooth Display"));
         assertFalse(TamperRules.isProtectedScreen("Camera Uninstall Force stop"));
     }
+
+    @Test
+    public void filteredProfileAllowsAppsAndSitesButNotHarmful() {
+        Policy p = new Policy();
+        Profiles.apply(p, Profiles.FILTERED);
+        java.util.Map<String, java.util.Set<String>> m = cats();
+        m.put("dating", new java.util.HashSet<>(java.util.Arrays.asList("tinder.com")));
+        DnsFilter f = new DnsFilter(p, m);
+        assertTrue(f.isAllowed("youtube.com"));
+        assertTrue(f.isAllowed("facebook.com"));
+        assertFalse(f.isAllowed("tinder.com"));
+        assertTrue(PolicyEnforcer.isAppAllowed(p, false, "com.android.chrome"));
+        assertTrue(PolicyEnforcer.isAppAllowed(p, false, "com.google.android.youtube"));
+        p.blockedApps.add("com.zhiliaoapp.musically");
+        assertFalse(PolicyEnforcer.isAppAllowed(p, false, "com.zhiliaoapp.musically"));
+        assertFalse(PolicyEnforcer.isAppAllowed(p, true, "com.android.chrome")); // Shabbos mode
+        assertTrue(p.allowAppInstalls);
+        assertTrue(TamperRules.isProtectedScreen("Connection request: SuperVPN wants to set up a VPN connection"));
+        assertFalse(TamperRules.isProtectedScreen("KosherGuard wants to set up a VPN connection"));
+    }
+
+    @Test
+    public void heimishProfileStillUsesApprovedList() {
+        Policy p = new Policy();
+        Profiles.apply(p, Profiles.HEIMISH);
+        assertFalse(PolicyEnforcer.isAppAllowed(p, false, "com.android.chrome"));
+    }
 }

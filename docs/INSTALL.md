@@ -54,7 +54,7 @@ KosherGuard opens the **KosherFlip setup** checklist. Do the steps in order. Eac
 screen; press Back to return and the step gets a ✔:
 
 1. **Admin PIN**: choose a PIN (4+ digits) for the supervisor.
-2. **Profile**: Kosher / Heimish / Open.
+2. **Profile**: *Filtered* (default – all apps and browsers, content filtered) / Kosher / Heimish / Open.
 3. **Allow KosherGuard to install the KosherFlip apps**: turn on *Allow from this source*, press Back.
 4. **Install the KosherFlip apps**: press *Install* for each app (launcher, browser, AI, keyboard).
    No internet? Open the other APK files you received in the Files app instead.
@@ -162,8 +162,9 @@ Then open KosherGuard → *Apply now*.
 ## First setup in KosherGuard (all methods)
 
 1. **Choose an admin PIN** (4+ digits). Give it only to the person supervising the phone.
-2. **Profile**: *Kosher* (calls, texts and approved apps, no browser) · *Heimish* (filtered
-   browsing, shopping and downloads) · *Open + protected*.
+2. **Profile**: *Filtered* (default: all apps and browsers, content filtered) · *Kosher* (calls,
+   texts and approved apps, no browser) · *Heimish* (filtered browsing, shopping and downloads) ·
+   *Open + protected*.
 3. **AI assistant** (optional, free): on a computer go to **aistudio.google.com → Get API key →
    Create API key**, then in KosherGuard → *AI assistant* paste the key → *Save*.
 4. **Google account** (optional): add it now in *Settings → Accounts* for Gmail, Maps and Play services.

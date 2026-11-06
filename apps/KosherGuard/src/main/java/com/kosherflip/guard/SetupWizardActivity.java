@@ -62,7 +62,7 @@ public class SetupWizardActivity extends Activity {
         boolean pin = Pin.isSet(this);
         step(pin, "1. Admin PIN", "for the person who supervises the phone", this::createPin);
         boolean profile = Standard.prefs(this).getBoolean("profile", false);
-        step(profile, "2. Profile: " + Profiles.label(Policy.load(this).profile), "Kosher / Heimish / Open", this::chooseProfile);
+        step(profile, "2. Profile: " + Profiles.label(Policy.load(this).profile), "Filtered (all apps) / Kosher / Heimish / Open", this::chooseProfile);
         boolean canInstall = Standard.canInstall(this);
         boolean apps = Standard.appsInstalled(this);
         if (!apps) {

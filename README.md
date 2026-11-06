@@ -26,7 +26,8 @@ downloads**, a filter that checks **everything on the screen**, and a free AI as
 ## Features
 
 **Filtering ("heimish filter" style, but usable)**
-- **Profiles**: *Kosher* (calls, texts, approved apps, no browser), *Heimish* (filtered browsing,
+- **Profiles**: *Filtered* (default: **all apps and browsers allowed, the content in them filtered**),
+  *Kosher* (calls, texts, approved apps, no browser), *Heimish* (filtered browsing,
   shopping & downloads; pictures only on trusted sites), *Open + protected* (most sites, smart filtering).
 - **Website categories**: social media, video, streaming, news & gossip, games, dating, gambling,
   unfiltered AI chat, unfiltered search, proxies/VPNs, web chat – each on/off. Trusted categories

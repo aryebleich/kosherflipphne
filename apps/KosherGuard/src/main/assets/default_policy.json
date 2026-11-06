@@ -1,12 +1,12 @@
 {
-  "version": 2,
+  "version": 3,
   "filterMode": "blocklist",
   "upstreamDns": [
     "185.228.168.168",
     "185.228.169.168"
   ],
   "lockUsbDebugging": false,
-  "allowAppInstalls": false,
+  "allowAppInstalls": true,
   "allowedApps": [
     "com.kosherflip.guard",
     "com.kosherflip.launcher",
@@ -63,27 +63,19 @@
     "news.google.com",
     "images.google.com"
   ],
-  "profile": "heimish",
+  "profile": "filtered",
   "blockedCategories": [
-    "social",
-    "video",
-    "streaming",
-    "news",
-    "games",
     "dating",
     "gambling",
-    "ai_chat",
-    "search_unfiltered",
-    "proxies",
-    "messaging_web"
+    "proxies"
   ],
   "trustedCategories": [
     "shopping",
     "jewish",
     "essentials"
   ],
-  "imageMode": "trusted",
-  "blockVideo": true,
+  "imageMode": "all",
+  "blockVideo": false,
   "browserEnabled": true,
   "screenFilter": true,
   "customWords": [],
@@ -116,5 +108,7 @@
     "jpeg",
     "png",
     "zip"
-  ]
+  ],
+  "allowAllApps": true,
+  "blockedApps": []
 }

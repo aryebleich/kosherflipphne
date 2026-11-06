@@ -36,7 +36,10 @@ public final class Policy {
     public Set<String> allowedApps = new LinkedHashSet<>();
     public Set<String> allowedDomains = new LinkedHashSet<>();
     public Set<String> blockedDomains = new LinkedHashSet<>();
-    public String profile = Profiles.HEIMISH;
+    public String profile = Profiles.FILTERED;
+    /** Every app is allowed (content is filtered); only blockedApps are blocked. */
+    public boolean allowAllApps = true;
+    public Set<String> blockedApps = new LinkedHashSet<>();
     public Set<String> blockedCategories = new LinkedHashSet<>();
     public Set<String> trustedCategories = new LinkedHashSet<>();
     /** none | trusted | blur | all - how the browser shows pictures. */
@@ -136,7 +139,9 @@ public final class Policy {
         p.aiProvider = o.optString("aiProvider", "gemini");
         p.aiModel = o.optString("aiModel", "");
         p.aiBaseUrl = o.optString("aiBaseUrl", "");
-        p.profile = o.optString("profile", Profiles.HEIMISH);
+        p.profile = o.optString("profile", Profiles.FILTERED);
+        p.allowAllApps = o.optBoolean("allowAllApps", false);
+        readList(o.optJSONArray("blockedApps"), p.blockedApps);
         p.imageMode = o.optString("imageMode", "trusted");
         p.blockVideo = o.optBoolean("blockVideo", true);
         p.browserEnabled = o.optBoolean("browserEnabled", true);
@@ -187,6 +192,8 @@ public final class Policy {
             o.put("aiModel", aiModel);
             o.put("aiBaseUrl", aiBaseUrl);
             o.put("profile", profile);
+            o.put("allowAllApps", allowAllApps);
+            o.put("blockedApps", new JSONArray(blockedApps));
             o.put("imageMode", imageMode);
             o.put("blockVideo", blockVideo);
             o.put("browserEnabled", browserEnabled);

@@ -180,7 +180,9 @@ public final class PolicyEnforcer {
         if (BuildConfigShim.AI.equals(pkg)) return p.aiEnabled;
         if (BuildConfigShim.BROWSER.equals(pkg)) return p.browserEnabled;
         if (p.talkOnly && MESSAGING.contains(pkg)) return false;
-        return CORE.contains(pkg) || p.allowedApps.contains(pkg);
+        if (CORE.contains(pkg)) return true;
+        if (p.allowAllApps) return !p.blockedApps.contains(pkg);
+        return p.allowedApps.contains(pkg);
     }
 
     static Bundle aiConfig(Policy p) {

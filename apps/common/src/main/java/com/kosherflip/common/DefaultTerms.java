@@ -30,6 +30,6 @@ final class DefaultTerms {
             "gambling", "casino", "poker", "jackpot", "slots", "betting",
             "shit", "bitch", "bastard", "damn", "hell", "ass", "crap",
             "gore", "graphic violence", "beheading",
-            "celebrity gossip", "red carpet", "netflix", "tiktok", "instagram", "youtube",
+            "celebrity gossip", "red carpet",
     };
 }

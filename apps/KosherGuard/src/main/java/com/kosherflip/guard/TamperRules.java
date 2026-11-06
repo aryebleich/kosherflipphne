@@ -42,6 +42,8 @@ final class TamperRules {
 
     static boolean isProtectedScreen(String screenText) {
         String t = screenText.toLowerCase(Locale.ROOT);
+        // Another VPN app would replace the website filter.
+        if (t.contains("wants to set up a vpn connection") && !t.contains("kosherguard")) return true;
         for (String a : ALWAYS) if (t.contains(a)) return true;
         boolean ours = false;
         for (String n : OUR_NAMES) if (t.contains(n)) { ours = true; break; }

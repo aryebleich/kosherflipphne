@@ -139,7 +139,8 @@ public class AdminActivity extends Activity {
         item("Profile: " + p.profile, this::chooseProfile);
         item("Requests" + (pending > 0 ? " (" + pending + " new)" : ""), this::showRequests);
         item("Insights & suggestions", this::showInsights);
-        item("Allowed apps", this::showApps);
+        item("Apps: " + (p.allowAllApps ? "all allowed (untick to block one)" : "approved list only"), this::showApps);
+        item("Allow all apps by default: " + onOff(p.allowAllApps), () -> toggle(q -> q.allowAllApps = !q.allowAllApps));
         item("Blocked categories (" + p.blockedCategories.size() + ")", () -> chooseCategories(true));
         item("Trusted categories (" + p.trustedCategories.size() + ")", () -> chooseCategories(false));
         item("Filter mode: " + (Policy.MODE_ALLOWLIST.equals(p.filterMode) ? "strict" : "standard"), this::toggleMode);
@@ -502,7 +503,8 @@ public class AdminActivity extends Activity {
         for (int i = 0; i < pkgs.size(); i++) {
             String pkg = pkgs.get(i);
             boolean on = BuildConfigShim.AI.equals(pkg) ? p.aiEnabled
-                    : BuildConfigShim.BROWSER.equals(pkg) ? p.browserEnabled : p.allowedApps.contains(pkg);
+                    : BuildConfigShim.BROWSER.equals(pkg) ? p.browserEnabled
+                    : p.allowAllApps ? !p.blockedApps.contains(pkg) : p.allowedApps.contains(pkg);
             lv.setItemChecked(i, on);
         }
         lv.setOnItemClickListener((parent, view, pos, id) -> {
@@ -511,7 +513,9 @@ public class AdminActivity extends Activity {
             boolean on = lv.isItemChecked(pos);
             if (BuildConfigShim.AI.equals(pkg)) q.aiEnabled = on;
             else if (BuildConfigShim.BROWSER.equals(pkg)) q.browserEnabled = on;
-            else if (on) q.allowedApps.add(pkg);
+            else if (q.allowAllApps) {
+                if (on) q.blockedApps.remove(pkg); else q.blockedApps.add(pkg);
+            } else if (on) q.allowedApps.add(pkg);
             else q.allowedApps.remove(pkg);
             q.save(this);
             PolicyEnforcer.apply(this);

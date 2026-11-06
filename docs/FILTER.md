@@ -2,14 +2,25 @@
 
 ## Profiles
 
-| | Kosher | Heimish (default) | Open + protected |
-|---|---|---|---|
-| Browser | off | on | on |
-| Websites | only trusted categories + always-allowed list (strict) | everything except blocked categories | everything except harmful categories |
-| Blocked categories | all | social, video, streaming, news, games, dating, gambling, AI chat, unfiltered search, proxies, web chat | dating, gambling, AI chat, unfiltered search, proxies |
-| Pictures in browser | none | trusted sites only | all |
-| Video | blocked | blocked | allowed |
-| Screen filter | on | on | on |
+| | **Filtered (default)** | Kosher | Heimish | Open + protected |
+|---|---|---|---|---|
+| Apps | **all apps & browsers** (admin can block single apps) | approved list | approved list | approved list |
+| Installing apps (Play Store) | allowed | blocked | blocked | blocked |
+| Websites | everything except blocked categories | only trusted categories + always-allowed list (strict) | everything except blocked categories | everything except harmful categories |
+| Blocked categories | dating, gambling, proxies/VPNs | all | social, video, streaming, news, games, dating, gambling, AI chat, unfiltered search, proxies, web chat | dating, gambling, AI chat, unfiltered search, proxies |
+| Pictures in KosherBrowser | all | none | trusted sites only | all |
+| Video | allowed (YouTube Restricted Mode) | blocked | blocked | allowed |
+| Screen filter (text in every app) | on | on | on | on |
+
+In the **Filtered** profile nothing is hidden: Chrome, Google, YouTube, WhatsApp, AI apps and
+the Play Store all work, and the content is filtered instead:
+- the family DNS blocks adult sites in every app and forces **Google/Bing SafeSearch** and
+  **YouTube Restricted Mode**;
+- the **screen filter** reads the text every app shows and covers inappropriate content;
+- **KosherAI** filters every question and answer; other AI apps are covered by the screen filter;
+- proxy/VPN apps and sites stay blocked so the filter can't be switched off.
+The screen filter reads text, not pictures: pictures in other apps are only limited by SafeSearch,
+Restricted Mode and the adult-site blocking. Choose *Heimish* or *Kosher* for stricter control.
 
 Family-safe DNS (adult content, proxies, SafeSearch) applies in every profile.
 

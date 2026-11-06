@@ -108,7 +108,8 @@ public class ScreenGuardService extends AccessibilityService {
         StringBuilder sb = new StringBuilder();
         collect(root, sb, new int[] {0});
         String pkg = pendingPackage;
-        if (standard && pkg != null && TamperRules.SYSTEM_SCREENS.contains(pkg) && !Maintenance.active(this)
+        if (standard && pkg != null && (TamperRules.SYSTEM_SCREENS.contains(pkg) || TamperRules.INSTALLERS.contains(pkg))
+                && !Maintenance.active(this)
                 && TamperRules.isProtectedScreen(sb.toString())) {
             block(pkg, "This setting is locked by KosherGuard.\nThe admin can unlock it with the PIN.", false);
             return;

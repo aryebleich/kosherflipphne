@@ -107,6 +107,15 @@ jobs:
           # vbmeta with verification disabled (flag 2), as the S22 Flip needs for a GSI
           python3 scripts/make-vbmeta-disabled.py vbmeta-disabled.img
 
+      - name: Carrier APN database (all carriers)
+        run: |
+          # Open-source APN list from LineageOS (Apache 2.0): data, MMS and VoLTE "ims" APNs worldwide.
+          for b in lineage-23.0 lineage-22.2 lineage-22.1; do
+            curl -fsSL -o apns-conf.xml "https://raw.githubusercontent.com/LineageOS/android_vendor_lineage/$b/prebuilt/common/etc/apns-conf.xml" && break
+          done
+          python3 -c "import xml.etree.ElementTree as E; print(len(E.parse('apns-conf.xml').getroot().findall('apn')), 'APNs')"
+          echo "APNS_FILE=$PWD/apns-conf.xml" >> "$GITHUB_ENV"
+
       - name: Build KosherFlip into the image
         run: |
           export KOSHERFLIP_VERSION="$(cat apks/version.txt)"

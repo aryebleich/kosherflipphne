@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- Keypad phones: keep the Back/End keys delivered to the app (Android 16 predictive back). -->
     <application
+        android:enableOnBackInvokedCallback="false"
         android:allowBackup="false"
         android:icon="@android:drawable/ic_menu_edit"
         android:label="KosherKeys T9"

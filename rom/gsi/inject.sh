@@ -88,6 +88,14 @@ done
 put "$REPO/rom/vendor/kosher/prebuilt/privapp-permissions-kosherflip.xml" etc/permissions/privapp-permissions-kosherflip.xml 0644
 put "$REPO/rom/vendor/kosher/prebuilt/policy.json" etc/kosherflip/policy.json 0644
 
+# ---- Carrier settings (all carriers) ---------------------------------------------
+# APNS_FILE: a full APN database (LineageOS apns-conf.xml): internet, MMS and the
+# VoLTE "ims" APN set themselves up on carriers worldwide.
+if [[ -n "${APNS_FILE:-}" && -f "$APNS_FILE" ]]; then
+  log "Installing the carrier APN database ($(grep -c '<apn ' "$APNS_FILE") APN entries)"
+  put "$APNS_FILE" etc/apns-conf.xml 0644
+fi
+
 # ---- Device settings for calls --------------------------------------------------
 if [[ "${DEVICE:-}" == cat-s22 ]]; then
   D="$REPO/rom/gsi/cat-s22"

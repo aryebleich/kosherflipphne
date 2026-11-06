@@ -89,6 +89,24 @@ Android still needs Qualcomm's **IMS app**, which TrebleDroid installs for you:
    **Allow binder threads on incoming calls**.
 6. Reboot. Test an **outgoing and an incoming call** and a text.
 
+### Carriers
+
+The image works with **any carrier**, not only one. It contains the full LineageOS carrier database
+(about 3,900 APN entries worldwide), so internet, MMS and the VoLTE "ims" connection set themselves up
+from the SIM card. The VoLTE / video calling / Wi-Fi calling switches apply to every carrier.
+
+| Carrier (and the brands that use its network) | What to know |
+|---|---|
+| **Verizon** (Visible, Total by Verizon, Straight Talk/Tracfone on Verizon, US Mobile Warp) | Calls need VoLTE. Verizon only allows phones on its approved list: an S22 bought for Verizon or unlocked is listed; check the IMEI (`*#06#`) on verizon.com "Bring your own device". |
+| **AT&T** (Cricket, H2O, Red Pocket, Consumer Cellular, Straight Talk on AT&T) | Calls need VoLTE and AT&T's approved-device list. Check the IMEI at att.com "Bring your own phone". If calls fail, ask AT&T to turn on "HD Voice". |
+| **T-Mobile** (Metro, Mint, Google Fi, US Mobile Light Speed, Tello, Ultra) | Works with its IMS APN from the database; Wi-Fi calling may need turning on in SIM settings. |
+| **Israel** (Pelephone, Cellcom, Partner, HOT Mobile, Golan, kosher lines) | Internet and MMS APNs are included. If VoLTE doesn't register, add the IMS APN from step 4, or ask the carrier; calls may also fall back to 3G where it still exists. |
+| **UK / Europe** (EE, O2, Vodafone, Three, …) | APNs included. VoLTE depends on the carrier allowing this phone model. |
+| **Others / MVNOs** | Use the APNs of the network they run on (the database has most of them). If the internet doesn't work, copy the APN settings from the carrier's website. |
+
+Kosher / talk-only / no-data plans: calls and texts don't need mobile data, but **step 2 needs internet
+once** (Wi-Fi or a data SIM) to download the IMS app.
+
 Don't install a second (Pixel) IMS app next to it: S22 owners report it locks the SIM settings.
 
 **If VoLTE still doesn't register**, the Android 16 base image may not support calling on the S22 yet

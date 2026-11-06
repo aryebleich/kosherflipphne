@@ -8,7 +8,9 @@
         <package android:name="com.kosherflip.guard" />
     </queries>
 
+    <!-- Keypad phones: keep the Back/End keys delivered to the app (Android 16 predictive back). -->
     <application
+        android:enableOnBackInvokedCallback="false"
         android:allowBackup="false"
         android:icon="@android:drawable/sym_def_app_icon"
         android:label="Flip Home"

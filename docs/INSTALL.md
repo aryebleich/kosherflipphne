@@ -232,8 +232,10 @@ Things that depend on the phone, not on KosherFlip:
   without data. The browser, AI, Maps and app updates need data or Wi-Fi.
 - **Talk-only mode** sends a free auto-reply SMS; on plans without texting the reply is simply not sent.
 - **Hotspot** is blocked by KosherGuard by default (so a second device can't bypass the filter).
-- Method C (ROM) can lose **VoLTE / Wi-Fi calling** on some phones, which means no calls on
-  4G-only US networks. Test calls before relying on a ROM phone.
+- Method C (ROM / Android 16 image) replaces the phone's system: it brings the full LineageOS carrier
+  database (APNs for carriers worldwide) and VoLTE switches for every carrier, but VoLTE still depends on
+  the phone's IMS support and the carrier's approved-device list. Test calls before relying on it
+  (CAT S22 Flip details and a carrier table: [S22-ANDROID16.md](S22-ANDROID16.md#carriers)).
 
 ---
 

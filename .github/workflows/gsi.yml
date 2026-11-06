@@ -89,20 +89,16 @@ jobs:
           xz -d -T0 base.img.xz   # removes the .xz when done
           ls -la base.img; df -h /
 
-      - name: Android test keys and AVB tool
+      - name: Android test keys and vbmeta
         run: |
+          # Android's public test keys (identical in every release), from the official GitHub mirror.
           mkdir -p keys
-          for ref in android-latest-release main; do
-            curl -fsSL "https://android.googlesource.com/platform/build/+/refs/heads/$ref/target/product/security/platform.pk8?format=TEXT" | base64 -d > keys/platform.pk8 \
-              && curl -fsSL "https://android.googlesource.com/platform/build/+/refs/heads/$ref/target/product/security/platform.x509.pem?format=TEXT" | base64 -d > keys/platform.x509.pem \
-              && break
+          for f in platform.pk8 platform.x509.pem; do
+            curl -fsSL -o "keys/$f" "https://raw.githubusercontent.com/aosp-mirror/platform_build/master/target/product/security/$f"
           done
           openssl x509 -in keys/platform.x509.pem -noout -subject
-          for ref in android-latest-release main; do
-            curl -fsSL "https://android.googlesource.com/platform/external/avb/+/refs/heads/$ref/avbtool.py?format=TEXT" | base64 -d > avbtool.py && break
-          done
           # vbmeta with verification disabled (flag 2), as the S22 Flip needs for a GSI
-          python3 avbtool.py make_vbmeta_image --flags 2 --padding_size 4096 --output vbmeta-disabled.img
+          python3 scripts/make-vbmeta-disabled.py vbmeta-disabled.img
 
       - name: Build KosherFlip into the image
         run: |

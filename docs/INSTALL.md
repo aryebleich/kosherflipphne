@@ -258,6 +258,7 @@ apps in Settings, or factory reset.
 | An app is missing | App list → *Request an app…*; admin approves in *Requests*, or ticks it in *Allowed apps* |
 | AI says the key is invalid | Re-create the free key at aistudio.google.com and paste it again |
 | Forgot the admin PIN | Factory reset the phone and install again (by design there is no back door) |
+| Phone only: step 4 (install the apps) doesn't finish | Wait for the progress (about 12 MB), press **Install** on each prompt. If it still fails, press **Download in browser** and open each downloaded file. "Signed differently": uninstall the old KosherFlip app first |
 | Phone only: "App not installed" / "blocked by Play Protect" | Press *More details → Install anyway*; make sure there is free storage |
 | Phone only: the browser can't download `.apk` files | Use another browser, or get the files from another KosherFlip phone (Share) |
 | Phone only: screen filter switch is greyed out | Settings → Apps → KosherGuard → ⋮ → *Allow restricted settings* (Android 13+) |

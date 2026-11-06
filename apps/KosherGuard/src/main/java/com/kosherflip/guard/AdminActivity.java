@@ -12,6 +12,7 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ScrollView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
@@ -215,8 +216,19 @@ public class AdminActivity extends Activity {
         col.addView(Ui.text(this, "Downloading the latest KosherFlip apps. This can take a few minutes on a slow connection.", 15));
         setScroll(col);
         String url = Policy.load(this).updateUrl;
+        TextView status = Ui.text(this, "", 15);
+        col.addView(status);
+        Companions.listener = new Companions.Listener() {
+            @Override public void progress(String text) { runOnUiThread(() -> status.setText(text)); }
+            @Override public void confirm(Intent i) {
+                runOnUiThread(() -> {
+                    try { startActivity(i); } catch (RuntimeException e) { toast("Android did not show the install prompt"); }
+                });
+            }
+        };
         new Thread(() -> {
             String report = Companions.installOrUpdate(this, url);
+            Companions.listener = null;
             runOnUiThread(() -> {
                 LinearLayout c = Ui.column(this);
                 c.addView(Ui.title(this, "Apps"));

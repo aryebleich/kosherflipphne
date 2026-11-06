@@ -40,7 +40,31 @@ public final class Companions {
     };
     private static final String ACTION_DONE = "com.kosherflip.guard.INSTALL_DONE";
 
+    /** Progress and Android's "Install?" prompts go to the screen that is open (the setup checklist). */
+    interface Listener {
+        void progress(String text);
+        /** Android needs the user to confirm an install: start this from the visible activity. */
+        void confirm(Intent confirmIntent);
+    }
+
+    static volatile Listener listener;
+    private static final java.util.concurrent.ConcurrentHashMap<Integer, java.util.concurrent.CountDownLatch> waiting =
+            new java.util.concurrent.ConcurrentHashMap<>();
+    private static final java.util.concurrent.ConcurrentHashMap<Integer, String> results =
+            new java.util.concurrent.ConcurrentHashMap<>();
+
     private Companions() {}
+
+    private static void progress(String text) {
+        Listener l = listener;
+        if (l != null) l.progress(text);
+    }
+
+    /** Direct download address of one app, for the "download in the browser" fallback. */
+    static String url(String baseUrl, String file) {
+        String base = baseUrl == null || baseUrl.isEmpty() ? DEFAULT_BASE : baseUrl;
+        return (base.endsWith("/") ? base : base + "/") + file;
+    }
 
     /** Installs missing apps and updates outdated ones. Blocking; call off the UI thread. */
     static String installOrUpdate(Context ctx, String baseUrl) {
@@ -72,8 +96,13 @@ public final class Companions {
                     continue;
                 }
                 try {
-                    install(ctx, download(base + file), pkg);
-                    report.append(file).append(installed < 0 ? ": installed\n" : ": updated\n");
+                    progress("Downloading " + file + "\u2026");
+                    byte[] apk = download(base + file, file);
+                    progress("Installing " + file + " \u2013 press Install if asked\u2026");
+                    String result = install(ctx, apk, pkg);
+                    report.append(file).append(result == null
+                            ? (installed < 0 ? ": installed\n" : ": updated\n")
+                            : ": not installed (" + result + ")\n");
                 } catch (Exception e) {
                     Log.w(TAG, "install " + file, e);
                     report.append(file).append(": failed (").append(e.getMessage()).append(")\n");
@@ -95,6 +124,10 @@ public final class Companions {
     }
 
     private static byte[] download(String url) throws Exception {
+        return download(url, null);
+    }
+
+    private static byte[] download(String url, String label) throws Exception {
         for (int redirects = 0; redirects < 6; redirects++) {
             HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
             c.setInstanceFollowRedirects(false); // GitHub redirects across hosts
@@ -106,12 +139,22 @@ public final class Companions {
                 c.disconnect();
                 continue;
             }
-            if (code != 200) throw new java.io.IOException("HTTP " + code);
+            if (code != 200) throw new java.io.IOException("download failed, HTTP " + code);
+            long total = c.getContentLengthLong();
             try (InputStream in = c.getInputStream()) {
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
                 byte[] b = new byte[64 * 1024];
                 int n;
-                while ((n = in.read(b)) > 0) out.write(b, 0, n);
+                long done = 0, lastShown = 0;
+                while ((n = in.read(b)) > 0) {
+                    out.write(b, 0, n);
+                    done += n;
+                    if (label != null && done - lastShown > 256 * 1024) {
+                        lastShown = done;
+                        progress("Downloading " + label + "\u2026 " + (total > 0 ? (done * 100 / total) + "%"
+                                : (done / 1024) + " KB"));
+                    }
+                }
                 return out.toByteArray();
             } finally {
                 c.disconnect();
@@ -120,12 +163,15 @@ public final class Companions {
         throw new java.io.IOException("too many redirects");
     }
 
-    private static void install(Context ctx, byte[] apk, String pkg) throws Exception {
+    /** Installs one APK and waits for the result. Returns null on success, else the reason. */
+    private static String install(Context ctx, byte[] apk, String pkg) throws Exception {
         PackageInstaller pi = ctx.getPackageManager().getPackageInstaller();
         PackageInstaller.SessionParams params = new PackageInstaller.SessionParams(
                 PackageInstaller.SessionParams.MODE_FULL_INSTALL);
         params.setAppPackageName(pkg);
         int id = pi.createSession(params);
+        java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(1);
+        waiting.put(id, latch);
         try (PackageInstaller.Session s = pi.openSession(id)) {
             try (OutputStream os = s.openWrite("app.apk", 0, apk.length)) {
                 os.write(apk);
@@ -135,6 +181,25 @@ public final class Companions {
             int flags = PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= 31 ? PendingIntent.FLAG_MUTABLE : 0);
             s.commit(PendingIntent.getBroadcast(ctx, id, done, flags).getIntentSender());
         }
+        // Wait for Android (and the user's "Install" press) before the next app.
+        boolean finished = latch.await(10, java.util.concurrent.TimeUnit.MINUTES);
+        waiting.remove(id);
+        String r = results.remove(id);
+        if (!finished) return "no answer - press Install when Android asks";
+        return "ok".equals(r) ? null : r;
+    }
+
+    static String describe(int status, String msg) {
+        switch (status) {
+            case PackageInstaller.STATUS_FAILURE_ABORTED: return "cancelled";
+            case PackageInstaller.STATUS_FAILURE_BLOCKED: return "blocked by the phone (Play Protect?)";
+            case PackageInstaller.STATUS_FAILURE_CONFLICT:
+                return "an older copy signed differently is installed - uninstall it first";
+            case PackageInstaller.STATUS_FAILURE_INCOMPATIBLE: return "not compatible with this phone";
+            case PackageInstaller.STATUS_FAILURE_INVALID: return "the download is damaged - try again";
+            case PackageInstaller.STATUS_FAILURE_STORAGE: return "not enough storage";
+            default: return msg == null ? "failed" : msg;
+        }
     }
 
     /** Shows the system confirmation if Android asks for one (not needed when we are device owner). */
@@ -142,12 +207,27 @@ public final class Companions {
         @Override
         public void onReceive(Context context, Intent intent) {
             int status = intent.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE);
+            int id = intent.getIntExtra(PackageInstaller.EXTRA_SESSION_ID, -1);
             if (status == PackageInstaller.STATUS_PENDING_USER_ACTION) {
                 Intent confirm = intent.getParcelableExtra(Intent.EXTRA_INTENT);
-                if (confirm != null) context.startActivity(confirm.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
-            } else if (status != PackageInstaller.STATUS_SUCCESS) {
-                Log.w(TAG, "install failed: " + intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE));
+                if (confirm == null) return;
+                Listener l = listener;
+                if (l != null) {
+                    l.confirm(confirm); // started by the visible screen: never blocked by Android
+                } else {
+                    try {
+                        context.startActivity(confirm.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+                    } catch (RuntimeException e) {
+                        Log.w(TAG, "cannot show install prompt", e);
+                    }
+                }
+                return;
             }
+            String msg = intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE);
+            if (status != PackageInstaller.STATUS_SUCCESS) Log.w(TAG, "install failed: " + msg);
+            results.put(id, status == PackageInstaller.STATUS_SUCCESS ? "ok" : describe(status, msg));
+            java.util.concurrent.CountDownLatch latch = waiting.get(id);
+            if (latch != null) latch.countDown();
         }
     }
 }

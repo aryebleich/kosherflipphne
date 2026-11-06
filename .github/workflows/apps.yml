@@ -39,6 +39,15 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
+      # Until a private key is added (apps/signing/README.md), keep the same
+      # temporary debug key between builds so releases can update each other.
+      - name: Reuse the temporary signing key
+        if: env.HAS_KEY != 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: kosherflip-debug-keystore-v1
+
       - name: Validate filter policy
         run: |
           python3 -m json.tool apps/KosherGuard/src/main/assets/default_policy.json > /dev/null

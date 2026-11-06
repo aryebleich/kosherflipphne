@@ -27,7 +27,9 @@ public final class Policy {
 
     private static final String PREFS = "policy";
     private static final String KEY_JSON = "json";
-    private static final String ROM_POLICY = "/product/etc/kosherflip/policy.json";
+    /** Defaults built into the ROM (vendor tree) or the KosherFlip GSI image. */
+    private static final String[] ROM_POLICIES = {
+            "/product/etc/kosherflip/policy.json", "/system/etc/kosherflip/policy.json"};
 
     public String filterMode = MODE_BLOCKLIST;
     public List<String> upstreamDns = new ArrayList<>();
@@ -103,8 +105,9 @@ public final class Policy {
     }
 
     private static String readDefault(Context ctx) {
-        java.io.File rom = new java.io.File(ROM_POLICY);
-        if (rom.canRead()) {
+        for (String path : ROM_POLICIES) {
+            java.io.File rom = new java.io.File(path);
+            if (!rom.canRead()) continue;
             try (InputStream in = new java.io.FileInputStream(rom)) {
                 return readAll(in);
             } catch (IOException ignored) {

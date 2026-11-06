@@ -190,8 +190,9 @@ The phone is ready. Press **OK** on the home screen for the app list, the number
   *Settings → System → Advanced → Developer options*.
 - KosherKeys becomes the default keyboard because the S22 has a number keypad
   (#: abc/Abc/ABC/עברית/ייִדיש/123, 0: space, hold a key for its digit).
-- The ROM (Method C) is **not recommended** on the S22: it is an Android Go phone, the
-  maker (Bullitt) has closed, and there is no confirmed bootloader unlock. Keep its own firmware.
+- **Android 16 on the S22**: there is a ready-made KosherFlip Android 16 image and a flashing script
+  for this phone, see [S22-ANDROID16.md](S22-ANDROID16.md). It needs a computer once and erases the
+  phone; test calls afterwards. Without it, KosherFlip runs fine on the S22's own Android 11.
 - 2 GB RAM is enough: KosherFlip apps are small and the filter uses almost no battery.
 
 ### Pom phones (Pom Kosher, Pom Classic, "P63-X1" and other Pom models)

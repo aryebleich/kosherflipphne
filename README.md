@@ -62,6 +62,9 @@ downloads**, a filter that checks **everything on the screen**, and a free AI as
 by Bluetooth), install KosherGuard and follow its checklist. Also: QR code, Windows/Mac/Linux installer,
 phone notes (CAT S22 Flip, Pom) and carrier notes.
 
+**Android 16 on the CAT S22 Flip**: ready-made image + flashing script, see
+[docs/S22-ANDROID16.md](docs/S22-ANDROID16.md).
+
 ## Two ways to install
 
 | | **A. Apps only** (easiest) | **B. Full ROM** |

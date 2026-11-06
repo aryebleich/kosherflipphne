@@ -88,6 +88,11 @@ public final class Companions {
         try {
             for (String[] app : APPS) {
                 String pkg = app[0], file = app[1];
+                if (BuildConfigShim.GUARD.equals(pkg) && (ctx.getApplicationInfo().flags
+                        & android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0) {
+                    report.append(file).append(": part of the system (updated with the ROM)\n");
+                    continue;
+                }
                 long installed = versionCode(ctx, pkg);
                 long latest = versions == null ? -1 : versions.optLong(pkg, -1);
                 boolean need = installed < 0 || (latest > 0 && latest > installed);

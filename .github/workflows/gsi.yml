@@ -1,0 +1,126 @@
+name: Build KosherFlip Android 16 image (GSI)
+
+# Builds KosherFlip into a ready-made Android 16 Generic System Image (no AOSP
+# compile needed, fits GitHub's free runners) and publishes it as a
+# pre-release, together with the files and script to flash a CAT S22 Flip.
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "Android 16 arm64 GSI .img.xz URL (blank = newest TrebleDroid Android 16 arm64 image)"
+        default: ""
+      variant:
+        description: "TrebleDroid variant to pick (vanilla = no Google apps, gapps = with Google apps)"
+        default: "vanilla"
+
+permissions:
+  contents: write
+
+jobs:
+  gsi:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/local/lib/android /opt/hostedtoolcache/CodeQL /usr/local/share/boost
+          df -h /
+
+      - name: Install tools
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q erofs-utils attr android-sdk-libsparse-utils apksigner xz-utils e2fsprogs
+
+      - name: Get the KosherFlip apps (latest release)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p apks
+          gh release download --repo "$GITHUB_REPOSITORY" --dir apks \
+            -p KosherGuard.apk -p FlipLauncher.apk -p KosherBrowser.apk -p KosherAI.apk -p KosherKeys.apk
+          gh release view --repo "$GITHUB_REPOSITORY" --json tagName -q .tagName > apks/version.txt
+          ls -la apks
+
+      - name: Find the Android 16 base image
+        id: base
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASE_URL: ${{ inputs.base_url }}
+          VARIANT: ${{ inputs.variant }}
+        run: |
+          if [[ -n "$BASE_URL" ]]; then echo "url=$BASE_URL" >> "$GITHUB_OUTPUT"; exit 0; fi
+          gh api "repos/TrebleDroid/treble_experimentations/releases?per_page=30" > releases.json
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json, os, re, sys
+          variant = os.environ.get("VARIANT") or "vanilla"
+          rel = sorted(json.load(open("releases.json")), key=lambda r: r["published_at"] or "", reverse=True)
+          for r in rel:
+              text = (r.get("name") or "") + " " + (r.get("body") or "") + " " + r["tag_name"]
+              if not re.search(r"\b(A16|Android 16|16\.0|baklava)\b", text, re.I):
+                  continue
+              for a in r["assets"]:
+                  n = a["name"].lower()
+                  if re.search(r"arm64.*ab.*\.img\.xz$", n) and variant in n and "vndklite" not in n and "secure" not in n:
+                      print("url=" + a["browser_download_url"])
+                      print("name=" + a["name"], file=sys.stderr)
+                      print("release=" + r["html_url"], file=sys.stderr)
+                      sys.exit(0)
+          sys.exit("No Android 16 arm64 %s image found on TrebleDroid's releases; run again with base_url set." % variant)
+          PY
+
+      - name: Download base image
+        run: |
+          echo "Base: ${{ steps.base.outputs.url }}"
+          curl -fL --retry 3 -o base.img.xz "${{ steps.base.outputs.url }}"
+          xz -d -T0 base.img.xz
+          ls -la base.img; df -h /
+
+      - name: Android test keys and AVB tool
+        run: |
+          mkdir -p keys
+          for ref in android-latest-release main; do
+            curl -fsSL "https://android.googlesource.com/platform/build/+/refs/heads/$ref/target/product/security/platform.pk8?format=TEXT" | base64 -d > keys/platform.pk8 \
+              && curl -fsSL "https://android.googlesource.com/platform/build/+/refs/heads/$ref/target/product/security/platform.x509.pem?format=TEXT" | base64 -d > keys/platform.x509.pem \
+              && break
+          done
+          openssl x509 -in keys/platform.x509.pem -noout -subject
+          for ref in android-latest-release main; do
+            curl -fsSL "https://android.googlesource.com/platform/external/avb/+/refs/heads/$ref/avbtool.py?format=TEXT" | base64 -d > avbtool.py && break
+          done
+          # vbmeta with verification disabled (flag 2), as the S22 Flip needs for a GSI
+          python3 avbtool.py make_vbmeta_image --flags 2 --padding_size 4096 --output vbmeta-disabled.img
+
+      - name: Build KosherFlip into the image
+        run: |
+          export KOSHERFLIP_VERSION="$(cat apks/version.txt)"
+          sudo -E rom/gsi/inject.sh base.img apks kosherflip-system.img keys
+          rm -f base.img
+
+      - name: Package
+        id: pkg
+        run: |
+          NAME="kosherflip-android16-arm64-${{ inputs.variant }}-$(date +%Y%m%d)"
+          mkdir -p out
+          xz -T0 -6 -c kosherflip-system.img > "out/$NAME.img.xz"
+          cp vbmeta-disabled.img scripts/flash-s22.sh out/
+          (cd out && sha256sum * > SHA256SUMS)
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          ls -la out
+
+      - name: Publish (pre-release, does not replace the app releases)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: gsi-${{ github.run_number }}
+          name: "KosherFlip Android 16 image ${{ github.run_number }} (CAT S22 Flip / arm64 GSI)"
+          prerelease: true
+          make_latest: false
+          target_commitish: ${{ github.sha }}
+          body: |
+            KosherFlip built into an Android 16 arm64 GSI.
+            Base image: ${{ steps.base.outputs.url }}
+            Flashing guide for the CAT S22 Flip: https://github.com/${{ github.repository }}/blob/${{ github.sha }}/docs/S22-ANDROID16.md
+
+            **Erases the phone. Needs an unlockable bootloader. Test calls before relying on it.**
+          files: out/*

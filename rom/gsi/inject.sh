@@ -11,6 +11,10 @@
 # system app that can make itself device owner at first boot (full protection).
 #
 # Handles raw or sparse images, ext4 or EROFS.
+#
+# DEVICE=cat-s22 adds the CAT S22 Flip calling settings from rom/gsi/cat-s22/
+# (VoLTE switches, IMS feature, radio HAL matrix). The Qualcomm IMS app itself is
+# not bundled: install it on the phone from Treble settings (docs/S22-ANDROID16.md).
 set -euo pipefail
 BASE="$1"; APKS="$2"; OUT="$3"; KEYS="${4:-}"
 REPO="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -83,6 +87,31 @@ for a in FlipLauncher KosherBrowser KosherAI KosherKeys; do
 done
 put "$REPO/rom/vendor/kosher/prebuilt/privapp-permissions-kosherflip.xml" etc/permissions/privapp-permissions-kosherflip.xml 0644
 put "$REPO/rom/vendor/kosher/prebuilt/policy.json" etc/kosherflip/policy.json 0644
+
+# ---- Device settings for calls --------------------------------------------------
+if [[ "${DEVICE:-}" == cat-s22 ]]; then
+  D="$REPO/rom/gsi/cat-s22"
+  log "CAT S22 Flip: VoLTE settings, IMS feature and radio HAL matrix"
+  put "$D/android.hardware.telephony.ims.xml" etc/permissions/android.hardware.telephony.ims.xml 0644
+  # Android reads the device-specific framework matrix from this exact name.
+  M="$SYS/etc/vintf/compatibility_matrix.device.xml"
+  if [[ -f "$M" ]]; then
+    log "Merging radio HALs into the existing compatibility_matrix.device.xml"
+    HALS="$(sed -n '/<hal /,/<\/hal>/p' "$D/compatibility_matrix.device.xml")"
+    python3 - "$M" "$HALS" > "$WORK/matrix.xml" <<'PY'
+import sys
+p, hals = sys.argv[1], sys.argv[2]
+s = open(p).read()
+if "vendor.qti.hardware.radio.ims" not in s:
+    s = s.replace("</compatibility-matrix>", hals + "\n</compatibility-matrix>")
+sys.stdout.write(s)
+PY
+    sudo tee "$M" < "$WORK/matrix.xml" >/dev/null   # keeps the file's SELinux label
+  else
+    put "$D/compatibility_matrix.device.xml" etc/vintf/compatibility_matrix.device.xml 0644
+  fi
+  sudo tee -a "$SYS/build.prop" < "$D/volte.prop" >/dev/null
+fi
 
 # KosherGuard's first-boot setup replaces AOSP "Provision".
 for d in $(sudo find "$SYS" -maxdepth 3 -type d -name Provision); do log "Removing $d"; sudo rm -rf "$d"; done

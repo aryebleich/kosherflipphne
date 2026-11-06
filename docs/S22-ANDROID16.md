@@ -26,7 +26,8 @@ KosherFlip built in** that you can put on the phone yourself.
 
 From the repository's **Releases**, open the newest release called
 **"KosherFlip Android 16 image … (CAT S22 Flip / arm64 GSI)"** and download:
-- `kosherflip-android16-arm64-….img.xz`
+- `kosherflip-android16-cat-s22-….img.xz` (a 32-bit "arm32_binder64" image: the S22 runs 32-bit
+  Android on a 64-bit kernel, so normal arm64 images don't boot on it)
 - `vbmeta-disabled.img`
 - `flash-s22.sh` (Mac/Linux). On Windows run the same commands by hand (step 3).
 
@@ -57,7 +58,7 @@ fastboot reboot fastboot
 fastboot delete-logical-partition product_a
 fastboot delete-logical-partition product
 fastboot erase system
-fastboot flash system kosherflip-android16-arm64-vanilla-XXXXXXXX.img
+fastboot flash system kosherflip-android16-cat-s22-vanilla-XXXXXXXX.img
 fastboot -w
 fastboot reboot
 ```
@@ -71,6 +72,28 @@ itself the phone's filter (**full protection**, nothing to install) and opens se
 and profile as in [INSTALL.md → First setup](INSTALL.md#first-setup-in-kosherguard-all-methods).
 
 Then **test**: a call, a text, mobile data, Wi-Fi, the keypad, the camera.
+
+## 5. Make calls work (VoLTE)
+
+US carriers (and more and more others) only carry calls over **VoLTE**. The image already contains
+the VoLTE switches, the IMS feature and the S22's radio connections, and the red end-call key hangs up.
+Android still needs Qualcomm's **IMS app**, which TrebleDroid installs for you:
+
+1. Turn on **mobile data** (or Wi-Fi) once.
+2. **Settings → Treble settings (Phh Treble Settings) → IMS features → Install IMS APK for Qualcomm vendor.**
+   Then turn on **Request IMS network** and **Force the presence of 4G calling**.
+3. Settings → Network & internet → SIM → turn on **VoLTE / 4G calling**; preferred network type **LTE**.
+4. If calls still don't connect, add the carrier's IMS APN: Settings → Network → SIM → Access Point Names →
+   ➕ → Name `IMS`, APN `ims`, APN type `ims` → save (keep the normal internet APN too).
+5. If you can call out but **incoming calls fail**: Treble settings → Misc features →
+   **Allow binder threads on incoming calls**.
+6. Reboot. Test an **outgoing and an incoming call** and a text.
+
+Don't install a second (Pixel) IMS app next to it: S22 owners report it locks the SIM settings.
+
+**If VoLTE still doesn't register**, the Android 16 base image may not support calling on the S22 yet
+(S22 owners report IMS problems on Android 14+ GSIs). Go back to the stock Android 11 (*Going back*):
+calls always work there, and KosherFlip runs on it too (phone-only install).
 
 ## Going back to stock
 
@@ -87,7 +110,7 @@ after re-locking it may not unlock again.
 ## How the image is made (for maintainers)
 
 GitHub → Actions → **Build KosherFlip Android 16 image (GSI)** → Run workflow. It takes the newest
-TrebleDroid Android 16 arm64 image (or the URL you give), adds the KosherFlip apps from the latest app
+TrebleDroid Android 16 image for the device (CAT S22 Flip: arm32_binder64), or the URL you give, adds the KosherFlip apps from the latest app
 release (`rom/gsi/inject.sh`): KosherGuard as a privileged system app (re-signed with Android's public test
 keys when the base image uses them, so it can set itself up as device owner), the other apps, permissions
 and the filter policy, removes AOSP's setup app, makes `vbmeta-disabled.img`, and publishes a pre-release.

@@ -6,8 +6,11 @@ name: Build KosherFlip Android 16 image (GSI)
 on:
   workflow_dispatch:
     inputs:
+      device:
+        description: "cat-s22 (32-bit image + calling settings) or generic-arm64"
+        default: "cat-s22"
       base_url:
-        description: "Android 16 arm64 GSI .img.xz URL (blank = newest TrebleDroid Android 16 arm64 image)"
+        description: "Android 16 GSI .img.xz URL (blank = newest TrebleDroid Android 16 image for the device)"
         default: ""
       variant:
         description: "TrebleDroid variant to pick (vanilla = no Google apps, gapps = with Google apps)"
@@ -53,12 +56,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           BASE_URL: ${{ inputs.base_url }}
           VARIANT: ${{ inputs.variant }}
+          # The CAT S22 Flip runs a 32-bit userspace on a 64-bit kernel: "arm32_binder64" ("a64") images.
+          ARCH: ${{ inputs.device == 'cat-s22' && 'arm32_binder64' || 'arm64' }}
         run: |
           if [[ -n "$BASE_URL" ]]; then echo "url=$BASE_URL" >> "$GITHUB_OUTPUT"; exit 0; fi
           gh api "repos/TrebleDroid/treble_experimentations/releases?per_page=30" > releases.json
           python3 - <<'PY' >> "$GITHUB_OUTPUT"
           import json, os, re, sys
           variant = os.environ.get("VARIANT") or "vanilla"
+          arch = os.environ["ARCH"]
           rel = sorted(json.load(open("releases.json")), key=lambda r: r["published_at"] or "", reverse=True)
           def is_a16(r):
               text = " ".join([r.get("name") or "", r.get("tag_name") or "", (r.get("body") or "")[:300]])
@@ -71,15 +77,16 @@ jobs:
               def ok(n):
                   n = n.lower()
                   # "-old" = only VNDK 28/29 (Android 9/10 vendors); the S22 has an Android 11 vendor.
-                  return (n.endswith(".img.xz") and "arm64" in n and "arm32" not in n and variant in n
+                  wrong_arch = ("arm32" in n) if arch == "arm64" else (arch not in n)
+                  return (n.endswith(".img.xz") and not wrong_arch and variant in n
                           and not any(x in n for x in ("-old", "vndklite", "secure")))
-              exact = [a for a in r["assets"] if a["name"].lower() == "system-td-arm64-%s.img.xz" % variant]
+              exact = [a for a in r["assets"] if a["name"].lower() == "system-td-%s-%s.img.xz" % (arch, variant)]
               picks = exact or [a for a in r["assets"] if ok(a["name"])]
               if picks:
                   print("url=" + picks[0]["browser_download_url"])
                   print("Chose " + picks[0]["name"] + " from " + r["html_url"], file=sys.stderr)
                   sys.exit(0)
-          sys.exit("No Android 16 arm64 %s image found on TrebleDroid's releases; run again with base_url set." % variant)
+          sys.exit("No Android 16 " + arch + " %s image found on TrebleDroid's releases; run again with base_url set." % variant)
           PY
 
       - name: Download base image
@@ -103,13 +110,14 @@ jobs:
       - name: Build KosherFlip into the image
         run: |
           export KOSHERFLIP_VERSION="$(cat apks/version.txt)"
+          export DEVICE="${{ inputs.device }}"
           sudo -E rom/gsi/inject.sh base.img apks kosherflip-system.img keys
           rm -f base.img
 
       - name: Package
         id: pkg
         run: |
-          NAME="kosherflip-android16-arm64-${{ inputs.variant }}-$(date +%Y%m%d)"
+          NAME="kosherflip-android16-${{ inputs.device }}-${{ inputs.variant }}-$(date +%Y%m%d)"
           mkdir -p out
           xz -T0 -6 -c kosherflip-system.img > "out/$NAME.img.xz" && rm -f kosherflip-system.img
           cp vbmeta-disabled.img scripts/flash-s22.sh out/
@@ -121,12 +129,14 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: gsi-${{ github.run_number }}
-          name: "KosherFlip Android 16 image ${{ github.run_number }} (CAT S22 Flip / arm64 GSI)"
+          name: "KosherFlip Android 16 image ${{ github.run_number }} (${{ inputs.device }})"
           prerelease: true
           make_latest: false
           target_commitish: ${{ github.sha }}
           body: |
-            KosherFlip built into an Android 16 arm64 GSI.
+            KosherFlip built into an Android 16 GSI for **${{ inputs.device }}**
+            (CAT S22 Flip: 32-bit arm32_binder64 image with VoLTE settings; install the Qualcomm IMS
+            app from Treble settings after the first boot - see the guide).
             Base image: ${{ steps.base.outputs.url }}
             Flashing guide for the CAT S22 Flip: https://github.com/${{ github.repository }}/blob/${{ github.sha }}/docs/S22-ANDROID16.md
 

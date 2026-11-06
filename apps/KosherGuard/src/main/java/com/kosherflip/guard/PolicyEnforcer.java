@@ -74,6 +74,7 @@ public final class PolicyEnforcer {
             if (dpm != null) {
                 report.append(ensureScreenGuard(ctx, dpm, admin, p.screenFilter)).append('\n');
                 report.append(ensureKeyboard(ctx, p.t9Keyboard)).append('\n');
+        deviceTweaks(ctx);
             }
             startVpn(ctx);
             PolicyJob.schedule(ctx);
@@ -147,6 +148,7 @@ public final class PolicyEnforcer {
         // 3b. Screen filter (accessibility service) and the T9 keyboard.
         report.append(ensureScreenGuard(ctx, dpm, admin, p.screenFilter)).append('\n');
         report.append(ensureKeyboard(ctx, p.t9Keyboard)).append('\n');
+        deviceTweaks(ctx);
 
         // 4. Always-on DNS filter VPN.
         try {
@@ -271,6 +273,17 @@ public final class PolicyEnforcer {
         }
         if (on) android.provider.Settings.Secure.putInt(cr, android.provider.Settings.Secure.ACCESSIBILITY_ENABLED, 1);
         return on ? "Screen filter: on (every app)." : "Screen filter: off.";
+    }
+
+    /** CAT S22 Flip: the red end-call key is the power key, so let it hang up calls. */
+    static void deviceTweaks(Context ctx) {
+        if (!android.os.Build.MODEL.toUpperCase(java.util.Locale.ROOT).contains("S22 FLIP")) return;
+        if (ctx.checkSelfPermission("android.permission.WRITE_SECURE_SETTINGS") != PackageManager.PERMISSION_GRANTED) return;
+        try {
+            android.provider.Settings.Secure.putInt(ctx.getContentResolver(), "incall_power_button_behavior", 2);
+        } catch (RuntimeException e) {
+            Log.w(TAG, "end-call key", e);
+        }
     }
 
     /**

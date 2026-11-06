@@ -25,7 +25,11 @@ jobs:
 
       - name: Free disk space
         run: |
-          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/local/lib/android /opt/hostedtoolcache/CodeQL /usr/local/share/boost
+          df -h /
+          # Quick wins only (deleting the preinstalled Android SDK takes very long).
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL &
+          sudo docker image prune -af >/dev/null 2>&1 &
+          wait
           df -h /
 
       - name: Install tools
@@ -74,7 +78,7 @@ jobs:
         run: |
           echo "Base: ${{ steps.base.outputs.url }}"
           curl -fL --retry 3 -o base.img.xz "${{ steps.base.outputs.url }}"
-          xz -d -T0 base.img.xz
+          xz -d -T0 base.img.xz   # removes the .xz when done
           ls -la base.img; df -h /
 
       - name: Android test keys and AVB tool
@@ -103,7 +107,7 @@ jobs:
         run: |
           NAME="kosherflip-android16-arm64-${{ inputs.variant }}-$(date +%Y%m%d)"
           mkdir -p out
-          xz -T0 -6 -c kosherflip-system.img > "out/$NAME.img.xz"
+          xz -T0 -6 -c kosherflip-system.img > "out/$NAME.img.xz" && rm -f kosherflip-system.img
           cp vbmeta-disabled.img scripts/flash-s22.sh out/
           (cd out && sha256sum * > SHA256SUMS)
           echo "name=$NAME" >> "$GITHUB_OUTPUT"

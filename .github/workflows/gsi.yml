@@ -60,17 +60,25 @@ jobs:
           import json, os, re, sys
           variant = os.environ.get("VARIANT") or "vanilla"
           rel = sorted(json.load(open("releases.json")), key=lambda r: r["published_at"] or "", reverse=True)
+          def is_a16(r):
+              text = " ".join([r.get("name") or "", r.get("tag_name") or "", (r.get("body") or "")[:300]])
+              return re.search(r"(android_16|android 16|\bA16\b|16\.0\.0|baklava)", text, re.I)
           for r in rel:
-              text = (r.get("name") or "") + " " + (r.get("body") or "") + " " + r["tag_name"]
-              if not re.search(r"\b(A16|Android 16|16\.0|baklava)\b", text, re.I):
+              if not is_a16(r):
                   continue
-              for a in r["assets"]:
-                  n = a["name"].lower()
-                  if re.search(r"arm64.*ab.*\.img\.xz$", n) and variant in n and "vndklite" not in n and "secure" not in n:
-                      print("url=" + a["browser_download_url"])
-                      print("name=" + a["name"], file=sys.stderr)
-                      print("release=" + r["html_url"], file=sys.stderr)
-                      sys.exit(0)
+              names = [a["name"] for a in r["assets"]]
+              print("Android 16 release %s assets: %s" % (r["tag_name"], names), file=sys.stderr)
+              def ok(n):
+                  n = n.lower()
+                  # "-old" = only VNDK 28/29 (Android 9/10 vendors); the S22 has an Android 11 vendor.
+                  return (n.endswith(".img.xz") and "arm64" in n and "arm32" not in n and variant in n
+                          and not any(x in n for x in ("-old", "vndklite", "secure")))
+              exact = [a for a in r["assets"] if a["name"].lower() == "system-td-arm64-%s.img.xz" % variant]
+              picks = exact or [a for a in r["assets"] if ok(a["name"])]
+              if picks:
+                  print("url=" + picks[0]["browser_download_url"])
+                  print("Chose " + picks[0]["name"] + " from " + r["html_url"], file=sys.stderr)
+                  sys.exit(0)
           sys.exit("No Android 16 arm64 %s image found on TrebleDroid's releases; run again with base_url set." % variant)
           PY
 

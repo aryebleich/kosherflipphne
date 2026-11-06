@@ -62,6 +62,7 @@ public final class PolicyEnforcer {
 
     /** Applies everything. Safe to call often. Returns a human readable report. */
     public static String apply(Context ctx) {
+        PhoneApps.refresh(ctx);
         StringBuilder report = new StringBuilder();
         Policy p = Policy.load(ctx);
         DevicePolicyManager dpm = ctx.getSystemService(DevicePolicyManager.class);
@@ -178,10 +179,13 @@ public final class PolicyEnforcer {
     /** Is this launcher app allowed right now? Used to hide apps (owner) or block them (standard). */
     static boolean isAppAllowed(Policy p, boolean shabbos, String pkg) {
         if (BuildConfigShim.GUARD.equals(pkg) || BuildConfigShim.LAUNCHER.equals(pkg)) return true;
+        // The phone's own dialer / in-call screen: calls must always work (also on Shabbos, for emergencies).
+        if (PhoneApps.isCallApp(pkg)) return true;
         if (shabbos) return SHABBOS_APPS.contains(pkg);
         if (BuildConfigShim.AI.equals(pkg)) return p.aiEnabled;
         if (BuildConfigShim.BROWSER.equals(pkg)) return p.browserEnabled;
-        if (p.talkOnly && MESSAGING.contains(pkg)) return false;
+        if (p.talkOnly && (MESSAGING.contains(pkg) || PhoneApps.isSmsApp(pkg))) return false;
+        if (PhoneApps.isSmsApp(pkg)) return true;
         if (CORE.contains(pkg)) return true;
         if (p.allowAllApps) return !p.blockedApps.contains(pkg);
         return p.allowedApps.contains(pkg);
@@ -232,7 +236,7 @@ public final class PolicyEnforcer {
     private static void grantOwnPermissions(Context ctx, DevicePolicyManager dpm, ComponentName admin) {
         String[] guard = {"android.permission.RECEIVE_SMS", "android.permission.SEND_SMS",
                 "android.permission.POST_NOTIFICATIONS", "android.permission.ACCESS_COARSE_LOCATION",
-                "android.permission.ACCESS_FINE_LOCATION"};
+                "android.permission.ACCESS_FINE_LOCATION", "android.permission.READ_PHONE_STATE"};
         for (String perm : guard) grant(dpm, admin, ctx.getPackageName(), perm);
         grant(dpm, admin, BuildConfigShim.LAUNCHER, "android.permission.ACCESS_COARSE_LOCATION");
         grant(dpm, admin, BuildConfigShim.BROWSER, "android.permission.POST_NOTIFICATIONS");

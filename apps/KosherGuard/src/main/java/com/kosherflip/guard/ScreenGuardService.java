@@ -55,6 +55,7 @@ public class ScreenGuardService extends AccessibilityService {
     }
 
     private void reload() {
+        PhoneApps.refresh(this);
         Policy p = Policy.load(this);
         policy = p;
         standard = !PolicyEnforcer.isDeviceOwner(this);
@@ -72,6 +73,8 @@ public class ScreenGuardService extends AccessibilityService {
         if (pkg == null) return;
         String p = pkg.toString();
         if (exempt.contains(p) || p.contains("inputmethod") || p.contains("keyboard")) return;
+        // Never interfere with calls: the dialer and in-call screens are never covered or blocked.
+        if (PhoneApps.isCallApp(p) || p.contains("incallui") || p.contains("telecom")) return;
 
         if (standard && event.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
                 && !Maintenance.active(this)) {

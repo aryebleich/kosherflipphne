@@ -39,7 +39,7 @@ calling is not guaranteed.)
    7. **Protect KosherGuard from removal** → **Activate**.
    8. **Home screen** → *Flip Home* → *Always* (or keep the CAT home screen – both work).
    9. **T9 keyboard** (optional) – KosherKeys adds Hebrew and Yiddish T9; the CAT keyboard works too.
-   10. **Always-on filter** → ⚙ next to KosherGuard → **Always-on VPN** + **Block connections without VPN** → Back → *I did it*.
+   10. **Always-on filter** → ⚙ next to KosherGuard → **Always-on VPN** on (leave *Block connections without VPN* **off** – it can stop Wi-Fi calling and picture messages) → Back → *I did it*.
    11. **Finish – lock the phone.**
 5. Optional: KosherGuard → *AI assistant* → paste a free Gemini key (aistudio.google.com).
 
@@ -50,6 +50,22 @@ they were: nothing is erased.
 
 Make a call, receive a call, send a text and a picture message. Everything uses the phone's own system,
 so it works as before. If you use Wi-Fi calling, turn Wi-Fi on and make one more call.
+
+## Calls don't work? (also if they didn't work before KosherFlip)
+
+Open **KosherGuard → Check calls** (also at the bottom of the setup checklist). It reads what the phone
+reports and tells you the cause and the fix:
+
+| It says | What it means / what to do |
+|---|---|
+| **Locked to another carrier** | The S22 was sold by one carrier (often T-Mobile in the US) and only accepts its SIM cards. Ask **that** carrier to unlock it – free when the phone is paid off: T-Mobile/Metro: *Device Unlock* app or 611 · Verizon: automatic 60 days after activation · AT&T/Cricket: att.com/deviceunlock. After unlocking, every carrier's SIM works. |
+| **Emergency calls only** | The carrier doesn't accept this phone yet: call them, give the **IMEI** (dial `*#06#`), ask them to approve the phone and turn on **VoLTE / HD Voice**. Verizon and AT&T only allow approved phones. |
+| **No mobile service** | Mobile network settings → Preferred network type **4G/LTE**, Network operators **Automatic**, **VoLTE / 4G Calling** on. |
+| **Connected, but calls fail** | Turn on **VoLTE / 4G Calling** (button in Check calls). In the Phone info menu (`*#*#4636#*#*`) check *VoLTE provisioned*. Ask the carrier to enable VoLTE for your line. |
+| **"Block connections without VPN" is on** | Turn it off (keep Always-on VPN on). |
+
+KosherFlip itself never blocks calls: the phone app, the in-call screen, the calling service and MMS are
+always allowed and never filtered.
 
 ## Changing settings later
 

@@ -85,7 +85,9 @@ public class SetupWizardActivity extends Activity {
         }
         boolean always = Standard.alwaysOnConfirmed(this);
         step(always, "10. Make the website filter always on",
-                "gear next to KosherGuard → Always-on VPN + Block connections without VPN", this::alwaysOn);
+                "gear next to KosherGuard → Always-on VPN (leave \"Block connections\" off)", this::alwaysOn);
+        labels.add("Check calls (find out why calls don't work)");
+        actions.add(() -> startActivity(new Intent(this, CallCheckActivity.class)));
         boolean ready = pin && vpn && guard && admin;
         step(Standard.setupDone(this), "Finish – lock the phone", ready ? "protection starts now"
                 : "do steps 1, 5, 6 and 7 first", () -> finishSetup(ready));
@@ -216,8 +218,9 @@ public class SetupWizardActivity extends Activity {
 
     private void alwaysOn() {
         new AlertDialog.Builder(this).setTitle("Always-on filter")
-                .setMessage("On the next screen press the gear ⚙ next to KosherGuard, turn on "
-                        + "\"Always-on VPN\" and \"Block connections without VPN\", then press Back.")
+                .setMessage("On the next screen press the gear ⚙ next to KosherGuard and turn on "
+                        + "\"Always-on VPN\". Leave \"Block connections without VPN\" OFF: on some phones it "
+                        + "stops Wi-Fi calling and picture messages. Then press Back.")
                 .setPositiveButton("Open VPN settings", (d, w) -> open(new Intent(Settings.ACTION_VPN_SETTINGS)))
                 .setNeutralButton("I did it", (d, w) -> {
                     Standard.setAlwaysOnConfirmed(this);

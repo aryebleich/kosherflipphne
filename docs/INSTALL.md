@@ -66,8 +66,9 @@ screen; press Back to return and the step gets a ✔:
 7. **Protect KosherGuard from removal**: press *Activate*.
 8. **Home screen**: choose *Flip Home* (and *Always*).
 9. **T9 keyboard** (keypad phones): turn on *KosherKeys*, then choose it.
-10. **Always-on filter**: press the ⚙ next to KosherGuard → turn on *Always-on VPN* and
-    *Block connections without VPN*, press Back, then *I did it*.
+10. **Always-on filter**: press the ⚙ next to KosherGuard → turn on *Always-on VPN* (leave
+    *Block connections without VPN* off: it can stop Wi-Fi calling and picture messages), press Back,
+    then *I did it*.
 11. **Finish – lock the phone**.
 
 While the checklist is open, the Settings lock is paused. After *Finish*, the Settings screens that
@@ -264,6 +265,7 @@ apps in Settings, or factory reset.
 | A needed website is blocked | On the phone: browser → *Request access*. Admin: KosherGuard → *Requests* → Approve |
 | An app is missing | App list → *Request an app…*; admin approves in *Requests*, or ticks it in *Allowed apps* |
 | AI says the key is invalid | Re-create the free key at aistudio.google.com and paste it again |
+| Calls don't work | KosherGuard → **Check calls**: finds carrier lock, missing VoLTE, "emergency only", airplane mode and more, with the fix (details: [S22-ANDROID11.md](S22-ANDROID11.md#calls-dont-work-also-if-they-didnt-work-before-kosherflip)) |
 | Forgot the admin PIN | Factory reset the phone and install again (by design there is no back door) |
 | Phone only: step 4 (install the apps) doesn't finish | Wait for the progress (about 12 MB), press **Install** on each prompt. If it still fails, press **Download in browser** and open each downloaded file. "Signed differently": uninstall the old KosherFlip app first |
 | Phone only: "App not installed" / "blocked by Play Protect" | Press *More details → Install anyway*; make sure there is free storage |

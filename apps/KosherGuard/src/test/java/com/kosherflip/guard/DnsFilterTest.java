@@ -248,4 +248,26 @@ public class DnsFilterTest {
         assertTrue(f.isAllowed("ims.mnc480.mcc311.3gppnetwork.org"));
         assertTrue(java.util.Arrays.asList(FilterVpnService.TELEPHONY_BYPASS).contains("com.android.phone"));
     }
+
+    private static String problems(CallCheck.Input in) {
+        StringBuilder sb = new StringBuilder();
+        for (CallCheck.Finding f : CallCheck.diagnose(in)) if (f.problem) sb.append(f.title).append('|');
+        return sb.toString();
+    }
+
+    @Test
+    public void callCheckFindsCarrierLockAndOtherCauses() {
+        CallCheck.Input in = new CallCheck.Input();
+        in.simState = CallCheck.SIM_NETWORK_LOCKED;
+        assertTrue(problems(in).contains("locked to another carrier"));
+        in.simState = CallCheck.SIM_READY;
+        in.voice = CallCheck.SVC_EMERGENCY;
+        assertTrue(problems(in).contains("Emergency calls only"));
+        in.voice = CallCheck.SVC_IN;
+        assertEquals("", problems(in));
+        in.lockdownVpn = true;
+        assertTrue(problems(in).contains("Block connections"));
+        in.airplane = true;
+        assertEquals("Airplane mode is on|", problems(in));
+    }
 }

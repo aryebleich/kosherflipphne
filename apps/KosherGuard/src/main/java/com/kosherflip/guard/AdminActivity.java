@@ -136,6 +136,7 @@ public class AdminActivity extends Activity {
         menuLabels.clear();
         menuActions.clear();
         item("Status", this::showStatus);
+        item("Check calls", () -> startActivity(new Intent(this, CallCheckActivity.class)));
         item("Profile: " + p.profile, this::chooseProfile);
         item("Requests" + (pending > 0 ? " (" + pending + " new)" : ""), this::showRequests);
         item("Insights & suggestions", this::showInsights);
